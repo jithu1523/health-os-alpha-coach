@@ -1,0 +1,11 @@
+{
+  "name": "alpha-coach",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Adaptive nutrition and discipline coach. Single-file web app, no build step.",
+  "scripts": {
+    "test": "node test/verify.mjs",
+    "test:boot": "node test/boot.mjs"
+  },
+  "devDependencies": { "jsdom": "^24.0.0" }
+}
