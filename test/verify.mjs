@@ -198,10 +198,18 @@ A().ACT.wake(); await wait(220);
 {
   A().ACT.wipe(); await wait(320);
   A().S.onboarded = true; A().ACT.wake(); await wait(220);
-  A().setOffset(120 * MIN); await wait(80);
+  const morning = new Date(); morning.setHours(7, 0, 0, 0);
+  const day = A().D();
+  day.logs = {}; day.prep = {}; day.reopened = {};
+  day.wake = morning.getTime();
+  day.key = new Date(morning).toISOString().slice(0, 10);
+  A().setOffset(morning.getTime() + 4 * 60 * MIN - Date.now()); await wait(80);
+  const timeText = ts => `${String(new Date(ts).getHours()).padStart(2, '0')}:${String(new Date(ts).getMinutes()).padStart(2, '0')}`;
+  const logNet = entries => entries.filter(e => e.code === 'LOGGED_HONESTLY' || e.code === 'LOG_LATE' || e.code === 'MEAL_LOGGED_ON_TIME').reduce((a, e) => a + e.pts, 0);
   const nx = A().nextRow();
   click(act('openEstimate', nx.meal.id)); await wait(170);
   ok('the estimator opens', /What did you eat/.test(txt()));
+  ok('the estimator asks when you actually ate', !!doc.querySelector('#estEatTime'));
   ok('a photo can be attached', !!doc.querySelector('[data-photo="est"]'));
   ok('dishes and portions are offered', doc.querySelectorAll('[data-act="estDish"]').length >= 12 && doc.querySelectorAll('[data-act="estPortion"]').length === 4);
   ok('it is honest about being an estimate', /An estimate, not a measurement/.test(txt()));
@@ -209,22 +217,49 @@ A().ACT.wake(); await wait(220);
   click(act('estPortion', 'large')); await wait(80);
   ok('portion scales the numbers', A().estimateDish('biryani', 'large').kcal === Math.round(720 * 1.4));
   const before = A().eatenMacros().kcal;
+  const estAte = morning.getTime() + 60 * MIN;
+  doc.querySelector('#estEatTime').value = timeText(estAte);
+  const estStart = A().S.points.ledger.length;
   click(act('saveEstimate', nx.meal.id)); await wait(220);
+  const estEntries = A().S.points.ledger.slice(estStart);
   ok('it logs against the meal', d().logs[nx.meal.id].status === 'replaced');
+  ok('estimator replacement uses the stated eating time', Math.abs(d().logs[nx.meal.id].ateAt - estAte) < MIN && d().logs[nx.meal.id].loggedAt > d().logs[nx.meal.id].ateAt + 2 * 60 * MIN);
+  ok('estimator replacement anchors the schedule on ateAt', (() => {
+    const next = A().nextRow(), gap = (next.at - d().logs[nx.meal.id].ateAt) / MIN;
+    const rule = A().PLAN.meals[nx.index].gap;
+    return gap >= rule.min - 1 && gap <= rule.ideal + 1;
+  })());
   ok('and its calories count toward the day', A().eatenMacros().kcal > before);
-  const truthfulNonWindow = entries => entries.some(e => e.code === 'MEAL_LOGGED_HONESTLY') &&
-    entries.every(e => !/inside the window/i.test((e.label || '') + ' ' + (e.reason || '')));
-  ok('estimator replacement uses truthful non-window points copy', truthfulNonWindow(A().S.points.ledger.filter(e => e.ref === nx.meal.id)));
+  const truthfulNonWindow = entries => {
+    const honest = entries.filter(e => e.code === 'LOGGED_HONESTLY');
+    return honest.length === 1 && honest[0].label === 'Told me instead of hiding it' &&
+      honest.every(e => !/inside the window/i.test((e.label || '') + ' ' + (e.reason || '')));
+  };
+  ok('estimator replacement uses truthful non-window points copy', truthfulNonWindow(estEntries));
+  ok('late estimator replacement nets non-negative logging points', logNet(estEntries) >= 0, String(logNet(estEntries)));
 
   const extraStart = A().S.points.ledger.length;
   A().ACT.openEstimate(); await wait(120);
+  ok('the extra estimator asks when you actually ate', !!doc.querySelector('#estEatTime'));
   click(act('saveEstimate')); await wait(180);
   ok('extra estimator uses truthful non-window points copy', truthfulNonWindow(A().S.points.ledger.slice(extraStart)));
 
   const manual = A().nextRow();
   const manualStart = A().S.points.ledger.length;
+  A().ACT.modal('replace', { dataset: { arg: manual.meal.id } }); await wait(120);
+  ok('manual replacement asks when you actually ate', !!doc.querySelector('#repEatTime'));
+  const manualAte = morning.getTime() + 130 * MIN;
+  doc.querySelector('#repEatTime').value = timeText(manualAte);
   A().ACT.saveReplace(manual.meal.id); await wait(160);
-  ok('manual replacement uses truthful non-window points copy', truthfulNonWindow(A().S.points.ledger.slice(manualStart)));
+  const manualEntries = A().S.points.ledger.slice(manualStart);
+  ok('manual replacement uses the stated eating time', Math.abs(d().logs[manual.meal.id].ateAt - manualAte) < MIN && d().logs[manual.meal.id].loggedAt > d().logs[manual.meal.id].ateAt + 60 * MIN);
+  ok('manual replacement anchors the schedule on ateAt', (() => {
+    const next = A().nextRow(), gap = (next.at - d().logs[manual.meal.id].ateAt) / MIN;
+    const rule = A().PLAN.meals[manual.index].gap;
+    return gap >= rule.min - 1 && gap <= rule.ideal + 1;
+  })());
+  ok('manual replacement uses truthful non-window points copy', truthfulNonWindow(manualEntries));
+  ok('late manual replacement nets non-negative logging points', logNet(manualEntries) >= 0, String(logNet(manualEntries)));
 }
 ok('the vision seam exists', typeof A().AlphaAPI.recogniseMeal === 'function');
 ok('and returns nothing without a backend', (await A().AlphaAPI.recogniseMeal('data:image/png;base64,x')) === null);

@@ -628,6 +628,27 @@ function dur(ms){
   const h=Math.floor(m/60), r=m%60;
   return r? `${h}h ${r}m` : `${h}h`;
 }
+const timeInputValue=ts=>`${String(new Date(ts).getHours()).padStart(2,'0')}:${String(new Date(ts).getMinutes()).padStart(2,'0')}`;
+function eatTimeControl(id='eatTime'){
+  return `<div class="eat-time">
+    <label class="field" style="margin:0;flex:1"><span>When did you actually eat it?</span>
+      <input class="input" id="${id}" type="time" value="${timeInputValue(now())}"></label>
+    <div class="eat-time-note"><p class="talk">Logging now at ${fmtTime(now())}. If you ate earlier, set the real time — the rest of the day is built on it, and an on-time meal keeps its credit even when the entry is late.</p></div>
+  </div>`;
+}
+function readAteTimeInput(id,d,loggedAt=now()){
+  const tf=document.querySelector(id);
+  let ateAt=loggedAt, timeConfirmed=false;
+  if(tf&&tf.value){
+    const [h,mi]=tf.value.split(':').map(Number);
+    const dt=new Date(loggedAt); dt.setHours(h,mi,0,0);
+    let ts=dt.getTime();
+    if(ts>loggedAt+5*MIN) ts-=864e5;
+    if(Math.abs(ts-loggedAt)>3*MIN) timeConfirmed=true;
+    ateAt=ts;
+  }
+  return {ateAt:clampAte(ateAt,d), timeConfirmed};
+}
 
 /* ---------- icons (1.7 stroke, 24 grid) ---------- */
 const I={
@@ -1453,7 +1474,7 @@ const LOG_GRACE=30*MIN;      // logged within this of eating = logged on time
 const RULES={
   MEAL_ON_TIME:      {pts:+10, label:'Meal eaten on time'},
   MEAL_LOGGED_ON_TIME:{pts:+8, label:'Logged inside the window'},
-  MEAL_LOGGED_HONESTLY:{pts:+8, label:'Logged honestly'},
+  LOGGED_HONESTLY:   {pts:+8, label:'Told me instead of hiding it'},
   TIME_CONFIRMED:    {pts:+5,  label:'Actual eating time confirmed'},
   SEQUENCE_KEPT:     {pts:+3,  label:'Meal taken in sequence'},
   SUPP_ON_TIME:      {pts:+5,  label:'Supplement logged'},
@@ -3783,7 +3804,8 @@ function Overlay(){
         <p class="meta" style="margin-top:4px">Replacing ${esc(meal.name)}</p></div>
         <button class="modal-x" data-act="close" aria-label="Close">${ic('x',16)}</button></div>
         <p class="talk" style="font-size:14px;color:var(--muted);margin-bottom:14px">No problem — record it and I will recalculate the rest of the day from this point.</p>
-        <button class="btn primary block" style="margin-bottom:12px" data-act="openEstimate" data-v="${meal.id}">
+        ${eatTimeControl('repEatTime')}
+        <button class="btn primary block" style="margin:0 0 12px" data-act="openEstimate" data-v="${meal.id}">
           ${ic('sparkleIcon',16)} Estimate it from a photo or a dish</button>
         <div class="label" style="margin:14px 0 8px">Or write it down</div>
         <label class="field"><span>What you ate</span><input class="input" id="repName" placeholder="e.g. chicken wrap and a coffee"></label>
@@ -3816,11 +3838,7 @@ function Overlay(){
         <button class="modal-x" data-act="close" aria-label="Close">${ic('x',16)}</button></div>
         <p class="talk" style="font-size:13.5px;color:var(--muted);margin-bottom:14px">
           Inventory is only deducted once you confirm — never when a meal is merely planned or prepared.</p>
-        <div class="eat-time">
-          <label class="field" style="margin:0;flex:1"><span>When did you actually eat it?</span>
-            <input class="input" id="eatTime" type="time" value="${String(new Date(now()).getHours()).padStart(2,'0')}:${String(new Date(now()).getMinutes()).padStart(2,'0')}"></label>
-          <div class="eat-time-note"><p class="talk">Logging now at ${fmtTime(now())}. If you ate earlier, set the real time — the rest of the day is built on it, and an on-time meal keeps its credit even when the entry is late.</p></div>
-        </div>
+        ${eatTimeControl('eatTime')}
         <div class="stack s">
         ${its.map(i=>{
           const have=invQty(i.ref), short=have<i.amt;
@@ -4110,6 +4128,7 @@ function Overlay(){
         </div>
         <p class="talk" style="font-size:12.5px;color:var(--muted);margin-top:9px">
           An estimate, not a measurement — restaurant portions vary by roughly a third either way. Adjust it if you know better.</p>
+        ${eatTimeControl('estEatTime')}
         <div class="grid g2" style="gap:0 12px;margin-top:12px">
           <label class="field"><span>Calories</span><input class="input" id="estK" type="number" value="${e.kcal}"></label>
           <label class="field"><span>Protein (g)</span><input class="input" id="estP" type="number" value="${e.p}"></label>
@@ -4328,18 +4347,9 @@ const ACT={
         if(amt>0) use.push({ref:i.ref,amt});
       });
     }
-    // the actual eating time the user confirmed, which may not be now
-    const tf=document.querySelector('#eatTime');
-    let ateAt=now(), timeConfirmed=false;
-    if(tf&&tf.value){
-      const [h,mi]=tf.value.split(':').map(Number);
-      const dt=new Date(now()); dt.setHours(h,mi,0,0);
-      let ts=dt.getTime();
-      if(ts>now()+5*MIN) ts-=864e5;
-      if(Math.abs(ts-now())>3*MIN) timeConfirmed=true;
-      ateAt=ts;
-    }
     const loggedAt=now();
+    // the actual eating time the user confirmed, which may not be now
+    const {ateAt,timeConfirmed}=readAteTimeInput('#eatTime',d,loggedAt);
     S.ui.modal=null; S.ui.celebrate=v; render();
     await AlphaAPI.logMeal({mealId:v,ateAt,loggedAt,plannedAt:row.at,consumed:use});
     setTimeout(()=>{
@@ -4463,18 +4473,24 @@ const ACT={
     const prot=($('#estP')&&+$('#estP').value)||0;
     const e=estimateDish(S.ui.estDish,S.ui.estPortion);
     const label=e.name;
+    const loggedAt=now();
+    const {ateAt,timeConfirmed}=readAteTimeInput('#estEatTime',d,loggedAt);
     if(v){
       const row=activeRows().find(r=>r.meal.id===v);
-      const at=now();
-      d.logs[v]={status:'replaced',at,ateAt:at,loggedAt:at,planned:row?row.at:at,note:label,kcal,
-                 macros:{kcal,p:prot,c:e.c,f:e.f,ratio:1},photo:S.ui.estPhoto||null};
-      Points.award('MEAL_LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} instead of ${row?row.meal.name.toLowerCase():'the planned meal'}`,ref:v});
+      let cls=null;
+      if(row){
+        const sequenceKept=!!(nextRow()&&nextRow().meal.id===row.meal.id);
+        cls=scoreMealLog(row,ateAt,loggedAt,{timeConfirmed,sequenceKept}).cls;
+      }
+      d.logs[v]={status:'replaced',at:ateAt,ateAt,loggedAt,planned:row?row.at:ateAt,note:label,kcal,
+                 macros:{kcal,p:prot,c:e.c,f:e.f,ratio:1},photo:S.ui.estPhoto||null,cls};
+      Points.award('LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} instead of ${row?row.meal.name.toLowerCase():'the planned meal'}`,ref:v});
       if(dayDone()) closeOutDay(d);
     }else{
       d.extra=d.extra||{kcal:0,p:0,items:[]};
       d.extra.kcal+=kcal; d.extra.p+=prot;
-      d.extra.items.push({name:label,kcal,p:prot,at:now(),photo:S.ui.estPhoto||null});
-      Points.award('MEAL_LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} honestly`});
+      d.extra.items.push({name:label,kcal,p:prot,at:ateAt,ateAt,loggedAt,photo:S.ui.estPhoto||null});
+      Points.award('LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} honestly`});
     }
     S.ui.modal=null; S.ui.estPhoto=null;
     save(); render();
@@ -4582,14 +4598,20 @@ const ACT={
     const row=activeRows().find(r=>r.meal.id===v);
     const kcal=($('#repKcal')&&+$('#repKcal').value)||(row?row.meal.kcal:0);
     const prot=($('#repP')&&+$('#repP').value)||(row?row.meal.p:0);
-    const at=now();
-    d.logs[v]={status:'replaced',at,ateAt:at,loggedAt:at,planned:row?row.at:at,note:name,kcal,
-               macros:{kcal,p:prot,c:0,f:0,ratio:1}};
-    Points.award('MEAL_LOGGED_HONESTLY',{reason:`Told me about ${esc(name)} instead of guessing`,ref:v});
+    const loggedAt=now();
+    const {ateAt,timeConfirmed}=readAteTimeInput('#repEatTime',d,loggedAt);
+    let cls=null;
+    if(row){
+      const sequenceKept=!!(nextRow()&&nextRow().meal.id===row.meal.id);
+      cls=scoreMealLog(row,ateAt,loggedAt,{timeConfirmed,sequenceKept}).cls;
+    }
+    d.logs[v]={status:'replaced',at:ateAt,ateAt,loggedAt,planned:row?row.at:ateAt,note:name,kcal,
+               macros:{kcal,p:prot,c:0,f:0,ratio:1},cls};
+    Points.award('LOGGED_HONESTLY',{reason:`Told me about ${esc(name)} instead of guessing`,ref:v});
     S.ui.modal=null;
     if(dayDone()) archive(d);
     save(); render();
-    toast(explainShift(row,at));
+    toast(explainShift(row,ateAt));
   },
 
   tprep(v){ const d=D(); if(!d) return; d.tomorrowPrep[v]=!d.tomorrowPrep[v]; save(); render(); },
