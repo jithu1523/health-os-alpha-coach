@@ -20,6 +20,8 @@ const ok = (l, c, x = '') => (c ? pass : fail).push(l + (c ? '' : '  ->  ' + x))
 const click = s => { const n = typeof s === 'string' ? doc.querySelector(s) : s; if (!n) { fail.push('missing node: ' + s); return false; } n.dispatchEvent(new W.MouseEvent('click', { bubbles: true })); return true; };
 const act = (a, v) => doc.querySelector(v != null ? `[data-act="${a}"][data-v="${v}"]` : `[data-act="${a}"]`);
 const txt = () => doc.querySelector('#app').textContent + doc.querySelector('#overlay').textContent;
+const timeText = ts => `${String(new Date(ts).getHours()).padStart(2, '0')}:${String(new Date(ts).getMinutes()).padStart(2, '0')}`;
+const displayTime = ts => new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
 await wait(320);
 ok('boots without errors', errs.length === 0, errs[0]);
@@ -62,8 +64,17 @@ ok('logging out of sequence is refused', A().commitMeal({ mealId: A().sched().ro
 A().setOffset(d().wake + 150 * MIN - Date.now()); await wait(120);
 click(act('ate', 'm1')); await wait(150);
 ok('the confirm window asks when you actually ate', !!doc.querySelector('#eatTime'));
+ok('main confirmation shows compact eat-time chips', doc.querySelectorAll('[data-eat-time-control="eatTime"] [data-act="eatTimeQuick"]').length === 4);
+{
+  const claimAt = Date.now() + A().offset - 30 * MIN;
+  click('[data-act="eatTimeQuick"][data-v="eatTime"][data-kind="30"]'); await wait(120);
+  ok('main confirmation chip sets a stated ateAt', doc.querySelector('#eatTime').value === timeText(claimAt), doc.querySelector('#eatTime').value);
+  ok('main confirmation primary includes selected time', txt().includes(`Log breakfast eaten at ${displayTime(claimAt)}`));
+}
 click(act('confirmEat', 'm1')); await wait(950);
+ok('normal planned-meal confirmation still logs the meal', d().logs.m1.status === 'done');
 ok('both timestamps are stored', !!d().logs.m1.ateAt && !!d().logs.m1.loggedAt);
+ok('main confirmation stores the quick-chip time as ateAt', timeText(d().logs.m1.ateAt) === timeText(d().logs.m1.loggedAt - 30 * MIN));
 ok('next meal derives from the eating time', (() => {
   const gap = (A().sched().rows[1].at - d().logs.m1.ateAt) / MIN;
   const rule = A().PLAN.meals[0].gap;
@@ -253,6 +264,12 @@ A().ACT.wake(); await wait(220);
   click(act('openEstimate', nx.meal.id)); await wait(170);
   ok('the estimator opens', /What did you eat/.test(txt()));
   ok('the estimator asks when you actually ate', !!doc.querySelector('#estEatTime'));
+  ok('the estimator shows compact eat-time chips', doc.querySelectorAll('[data-eat-time-control="estEatTime"] [data-act="eatTimeQuick"]').length === 4);
+  click('[data-act="eatTimeQuick"][data-v="estEatTime"][data-kind="meal"]'); await wait(120);
+  ok('estimator meal-time chip sets a stated ateAt', doc.querySelector('#estEatTime').value === timeText(nx.at), doc.querySelector('#estEatTime').value);
+  A().ACT.modal('replace', { dataset: { arg: nx.meal.id } }); await wait(120);
+  ok('estimator eat-time carries into replacement in the same session', doc.querySelector('#repEatTime').value === timeText(nx.at), doc.querySelector('#repEatTime').value);
+  A().ACT.openEstimate(nx.meal.id); await wait(120);
   ok('a photo can be attached', !!doc.querySelector('[data-photo="est"]'));
   ok('dishes and portions are offered', doc.querySelectorAll('[data-act="estDish"]').length >= 12 && doc.querySelectorAll('[data-act="estPortion"]').length === 4);
   ok('it is honest about being an estimate', /An estimate, not a measurement/.test(txt()));
@@ -291,6 +308,15 @@ A().ACT.wake(); await wait(220);
   const manualStart = A().S.points.ledger.length;
   A().ACT.modal('replace', { dataset: { arg: manual.meal.id } }); await wait(120);
   ok('manual replacement asks when you actually ate', !!doc.querySelector('#repEatTime'));
+  ok('manual replacement places eat-time below the estimator action', (() => {
+    const estimateButton = doc.querySelector('[data-act="openEstimate"][data-v="' + manual.meal.id + '"]');
+    const eatTime = doc.querySelector('[data-eat-time-control="repEatTime"]');
+    return !!estimateButton && !!eatTime && (estimateButton.compareDocumentPosition(eatTime) & W.Node.DOCUMENT_POSITION_FOLLOWING);
+  })());
+  const replaceClaimAt = Date.now() + A().offset - 60 * MIN;
+  click('[data-act="eatTimeQuick"][data-v="repEatTime"][data-kind="60"]'); await wait(120);
+  ok('manual replacement 1h chip sets a stated ateAt', doc.querySelector('#repEatTime').value === timeText(replaceClaimAt), doc.querySelector('#repEatTime').value);
+  ok('manual replacement primary includes selected time', /Save eaten at \d/.test(txt()));
   const manualAte = morning.getTime() + 130 * MIN;
   doc.querySelector('#repEatTime').value = timeText(manualAte);
   A().ACT.saveReplace(manual.meal.id); await wait(160);
