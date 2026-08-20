@@ -4,7 +4,7 @@ Every note lives here. Newest first. One line each — the decision, not the top
 
 | Date | Note | Decision | Status |
 |---|---|---|---|
-| — | *(nothing yet)* | | |
+| 2026-08-20 | [Require meal time, but make it a visible one-tap confirmation](meal-time-logging-placement.md) | Build the required `ateAt` input inline on the final logging confirmation, with honest defaults and one-tap corrections; do not hide it or make it a separate modal. | proposed |
 
 ---
 
