@@ -26,6 +26,28 @@ const displayTime = ts => new Date(ts).toLocaleTimeString([], { hour: 'numeric',
 await wait(320);
 ok('boots without errors', errs.length === 0, errs[0]);
 
+/* --------------------------------------------------------------- store seam */
+ok('store seam uses the local adapter by default', A().Store.activeName === 'local', A().Store.activeName);
+ok('store exposes load/save/subscribe', ['load', 'save', 'subscribe'].every(k => typeof A().Store[k] === 'function'));
+ok('supabase adapter is dormant and offline', A().Store.adapters.supabase.enabled === false && A().Store.adapters.supabase.network === false);
+{
+  const k = 'alphacoach.test.store';
+  let seen = false;
+  const off = A().Store.subscribe(k, v => { seen = !!v && v.probe === 42; });
+  await A().Store.save(k, { probe: 42 });
+  const loaded = await A().Store.load(k);
+  ok('local adapter saves through Store', loaded && loaded.probe === 42, JSON.stringify(loaded));
+  ok('local adapter notifies subscribers', seen);
+  await A().Store.clear(k);
+  off();
+}
+{
+  const sql = fs.readFileSync(path.resolve(process.cwd(), 'office/supabase/migrations/0001_init.sql'), 'utf8');
+  ok('supabase migration keeps ate_at separate from logged_at',
+    /ate_at\s+timestamptz\s+not null[\s\S]*logged_at\s+timestamptz\s+not null/i.test(sql));
+  ok('supabase points ledger accepts the append-only reversal code', /NEVER_LOGGED_VOIDED/.test(sql));
+}
+
 /* ---------------------------------------------------------------- onboarding */
 ok('kitchen tracking is off by default', A().invOn() === false);
 for (let i = 0; i < 6; i++) { click(act('ob', 'next')); await wait(35); }

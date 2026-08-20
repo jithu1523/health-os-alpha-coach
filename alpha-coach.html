@@ -1372,12 +1372,52 @@ const SKIP_REASONS=['Not hungry','No time','Ate out instead','Feeling unwell','R
 /* ===========================================================================
    STORE
    =========================================================================== */
-const Persist={
-  key:'alphacoach.v2',
-  read(){try{const r=localStorage.getItem(this.key);return r?JSON.parse(r):null;}catch(e){return null;}},
-  write(s){try{localStorage.setItem(this.key,JSON.stringify(s));}catch(e){}},
-  clear(){try{localStorage.removeItem(this.key);}catch(e){}}
+const STORE_KEY='alphacoach.v2';
+const STORE_BACKEND='local'; // Supabase stays dormant until the human says to connect a server.
+function createLocalAdapter(){
+  const subs=new Map();
+  const notify=(key,val)=>{
+    (subs.get(key)||[]).slice().forEach(cb=>{try{cb(val);}catch(e){}});
+  };
+  return {
+    name:'local',
+    enabled:true,
+    loadSnapshot(key){try{const r=localStorage.getItem(key);return r?JSON.parse(r):null;}catch(e){return null;}},
+    load(key){return Promise.resolve(this.loadSnapshot(key));},
+    save(key,obj){try{localStorage.setItem(key,JSON.stringify(obj));notify(key,obj);}catch(e){} return Promise.resolve();},
+    clear(key){try{localStorage.removeItem(key);notify(key,null);}catch(e){} return Promise.resolve();},
+    subscribe(key,cb){
+      const list=subs.get(key)||[];
+      list.push(cb); subs.set(key,list);
+      return ()=>subs.set(key,(subs.get(key)||[]).filter(x=>x!==cb));
+    }
+  };
+}
+function createSupabaseAdapter(){
+  const noop=()=>Promise.resolve(null);
+  return {
+    name:'supabase',
+    enabled:false,
+    network:false,
+    loadSnapshot(){return null;},
+    load:noop,
+    save:()=>Promise.resolve(),
+    clear:()=>Promise.resolve(),
+    subscribe(){return ()=>{};}
+  };
+}
+const Store={
+  key:STORE_KEY,
+  adapters:{local:createLocalAdapter(),supabase:createSupabaseAdapter()},
+  activeName:STORE_BACKEND==='supabase'?'supabase':'local',
+  get adapter(){return this.adapters[this.activeName]||this.adapters.local;},
+  loadSnapshot(key=this.key){return this.adapter.loadSnapshot(key);},
+  load(key=this.key){return this.adapter.load(key);},
+  save(key=this.key,obj=S){return this.adapter.save(key,obj);},
+  clear(key=this.key){return this.adapter.clear(key);},
+  subscribe(key=this.key,cb){return this.adapter.subscribe(key,cb);}
 };
+window.AlphaStore=Store;
 function blankDay(wakeTs){
   return {key:dayKey(wakeTs), wake:wakeTs, logs:{}, prep:{}, suppLog:{}, reminders:[], notes:[], closed:false, tomorrowPrep:{}, tomorrowPrepDone:false, water:0};
 }
@@ -1397,7 +1437,7 @@ function defaultState(){
         eatTimeSeen:false, eatTimeFull:false}
   };
 }
-let S=Persist.read()||defaultState();
+let S=Store.loadSnapshot(Store.key)||defaultState();
 const STATE_VERSION=3;
 (function migrate(){
   const d=defaultState();
@@ -1441,7 +1481,7 @@ const STATE_VERSION=3;
   if(S.ui.screen&&!['today','prep','inventory','shop','jugaad','points','prefs','stack','train','progress','coach','settings'].includes(S.ui.screen)) S.ui.screen='today';
   S.version=STATE_VERSION;
 })();
-const save=()=>Persist.write(S);
+const save=()=>Store.save(Store.key,S);
 
 function D(){
   const d=S.activeDay?S.days[S.activeDay]:null;
@@ -4332,7 +4372,7 @@ function crashScreen(err){
     <p style="font-family:var(--f-talk);margin:12px 0 0;color:var(--muted);line-height:1.55">
       This is almost always saved data from an older version of the app. Resetting clears it and starts fresh.</p>
     <pre style="margin:16px 0;padding:12px;background:var(--surface-2);border-radius:12px;font-size:12px;white-space:pre-wrap;color:var(--ink-2)">${esc(msg)}</pre>
-    <button class="btn primary" onclick="try{localStorage.removeItem('alphacoach.v2')}catch(e){};location.reload()">Reset saved data and reload</button>
+    <button class="btn primary" onclick="try{window.AlphaStore&&window.AlphaStore.clear()}catch(e){};location.reload()">Reset saved data and reload</button>
   </div>`;
 }
 let raf=0;
@@ -4952,7 +4992,7 @@ const ACT={
   devtime(v){ DEV_OFFSET=+v*MIN; lastSig=''; render(); toast(+v?`Previewing ${dur(+v*MIN)} ahead.`:'Clock reset to real time.'); },
   endday(){ const d=D(); if(!d) return; archive(d); S.activeDay=null; S.ui.screen='today'; save(); render(); toast('Session closed. Overdue meals will not carry into tomorrow.'); },
   redoSetup(){ S.onboarded=false; S.obStep=0; mounted=false; save(); render(); },
-  wipe(){ Persist.clear(); S=defaultState(); DEV_OFFSET=0; mounted=false; lastSig=''; render(); toast('All data reset.'); }
+  wipe(){ Store.clear(); S=defaultState(); DEV_OFFSET=0; mounted=false; lastSig=''; render(); toast('All data reset.'); }
 };
 
 async function sendMsg(text){
@@ -5071,7 +5111,7 @@ setInterval(()=>{ try{ tick(); }catch(e){ console.error(e); } },10000);
 try{ render(); }catch(e){ console.error(e); crashScreen(e); }
 setTimeout(()=>{ try{ evaluateReminders(); }catch(e){ console.error(e); } },400);
 window.AlphaCoach={get S(){return S;},PLAN,CATALOG,MEAL_LIBRARY,JUGAAD,SURPRISE,AlphaAPI,ACT,render,
-  Points,RULES,REWARD_TARGET,commitMeal,editAteTime,classifyLog,isOpen,isLocked,homeState,
+  Store,Points,RULES,REWARD_TARGET,commitMeal,editAteTime,classifyLog,isOpen,isLocked,homeState,
   eatenMacros,macrosFor,clampAte,autoResolveStale,checkStreakBreak,sessionKey,Notify,estimateMacros,
   DayRing,WeekBars,dayAxes,applyTheme,invOn,dayEndFor,sleepBound,estimateDish,DISHES,WeightTrend,
   resolveMeal,checkReplacements,applySwap,pickSurprise,surpriseStock,parseCommand,runOps,snapshotForAI,
