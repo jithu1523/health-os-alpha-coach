@@ -1592,6 +1592,10 @@ const RULES={
   MEAL_NEVER_LOGGED: {pts:-4,  label:'Meal never logged'},
   STREAK_BROKEN:     {pts:-10, label:'Streak broken'}
 };
+/* The reversal of an auto-resolve penalty is APPEND-ONLY, never a deletion.
+   Its magnitude is derived from MEAL_NEVER_LOGGED so the pair always sums to
+   zero — change the penalty and the reversal tracks it automatically. */
+RULES.NEVER_LOGGED_VOIDED = {pts:-RULES.MEAL_NEVER_LOGGED.pts, label:'Penalty returned — you did log it'};
 const REWARD_TARGET=120;      // points needed for the next surprise recipe
 const DAILY_NEG_FLOOR=-25;    // a bad day stings, it does not spiral
 const STREAK_GRACE=1;         // one missed day a week does not end a streak
@@ -1623,16 +1627,6 @@ const Points={
     S.ui.pointsFeed.push(e);
     return e;
   },
-  voidAward(code, ref){
-    if(!code||!ref) return 0;
-    const match=e=>e&&e.code===code&&e.ref===ref;
-    const voided=(S.points.ledger||[]).filter(match);
-    if(!voided.length) return 0;
-    const ids=new Set(voided.map(e=>e.id));
-    S.points.ledger=(S.points.ledger||[]).filter(e=>!ids.has(e.id));
-    if(S.ui&&Array.isArray(S.ui.pointsFeed)) S.ui.pointsFeed=S.ui.pointsFeed.filter(e=>!ids.has(e.id));
-    return voided.length;
-  },
   dayEntries(k){ k=k||sessionKey(); return S.points.ledger.filter(e=>e.day===k); },
   positive(k){ return this.dayEntries(k).filter(e=>e.pts>0).reduce((a,e)=>a+e.pts,0); },
   negative(k){ return this.dayEntries(k).filter(e=>e.pts<0).reduce((a,e)=>a+e.pts,0); },
@@ -1645,6 +1639,19 @@ const Points={
   cooldownLeft(){ return Math.max(0,(S.points.declineUntil||0)-now()); },
   streak(){ return S.points.streak||0; }
 };
+
+/* The moment a "never logged" claim is proven false, return the penalty via the
+   SOLE write path — a positive reversing entry, NOT a ledger deletion. Fires at
+   most once per meal, and only if the penalty was actually applied to this ref. */
+function reverseNeverLogged(ref, reason){
+  if(!ref) return null;
+  const led=S.points.ledger||[];
+  const applied=led.some(e=>e&&e.code==='MEAL_NEVER_LOGGED'&&e.ref===ref);
+  if(!applied) return null;                                    // never penalized -> nothing to return
+  const already=led.some(e=>e&&e.code==='NEVER_LOGGED_VOIDED'&&e.ref===ref);
+  if(already) return null;                                     // already returned -> exactly once
+  return Points.award('NEVER_LOGGED_VOIDED',{ref,reason:reason||'You did log it — penalty returned'});
+}
 
 /* punctuality of the MEAL and punctuality of the LOG are judged separately */
 function classifyLog(plannedAt, ateAt, loggedAt){
@@ -4526,7 +4533,7 @@ const ACT={
   unmiss(v){
     const d=D(); if(!d) return;
     const log=d.logs[v]; if(!log||log.status!=='missed') return;
-    Points.voidAward('MEAL_NEVER_LOGGED',v);
+    reverseNeverLogged(v,'You said you did eat it — penalty returned');
     delete d.logs[v];
     d.reopened=d.reopened||{}; d.reopened[v]=true;
     save(); render();
@@ -4615,7 +4622,7 @@ const ACT={
     if(v){
       const row=activeRows().find(r=>r.meal.id===v);
       const previous=d.logs[v];
-      if(previous&&previous.status==='missed'&&previous.auto) Points.voidAward('MEAL_NEVER_LOGGED',v);
+      if(previous&&previous.status==='missed'&&previous.auto) reverseNeverLogged(v,'You logged it after all — penalty returned');
       let cls=null;
       if(row){
         const sequenceKept=!!(nextRow()&&nextRow().meal.id===row.meal.id);
@@ -4736,7 +4743,7 @@ const ACT={
     const name=($('#repName')&&$('#repName').value.trim())||'something else';
     const row=activeRows().find(r=>r.meal.id===v);
     const previous=d.logs[v];
-    if(previous&&previous.status==='missed'&&previous.auto) Points.voidAward('MEAL_NEVER_LOGGED',v);
+    if(previous&&previous.status==='missed'&&previous.auto) reverseNeverLogged(v,'You logged it after all — penalty returned');
     const kcal=($('#repKcal')&&+$('#repKcal').value)||(row?row.meal.kcal:0);
     const prot=($('#repP')&&+$('#repP').value)||(row?row.meal.p:0);
     const loggedAt=now();

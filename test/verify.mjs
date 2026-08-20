@@ -148,7 +148,7 @@ ok('next meal derives from the eating time', (() => {
   ok('net stays positive', r.pts > 0, String(r.pts));
 }
 
-/* --------------------------------------- auto-resolved meals void on re-log */
+/* ---------------------------- auto-resolved meals reverse (append-only) on re-log */
 {
   const setupMissed = async () => {
     A().ACT.wipe(); await wait(320);
@@ -166,29 +166,56 @@ ok('next meal derives from the eating time', (() => {
     ok('auto-resolve marks the stale meal missed', (resolvedNow || !!A().D().logs[first.meal.id]) && A().D().logs[first.meal.id].status === 'missed');
     return first;
   };
-  const penaltyClean = (ref, label) => {
+  /* Approach A: the penalty is RETURNED by an appended reversing entry, never by
+     deleting the original. Both entries survive; the pair nets zero for the meal. */
+  const reversed = (ref, label) => {
     const entries = A().S.points.ledger.filter(e => e.ref === ref);
-    ok(label + ': no never-logged award remains', entries.every(e => e.code !== 'MEAL_NEVER_LOGGED'));
-    ok(label + ': no never-logged reason remains', entries.every(e => !/never logged/i.test((e.reason || '') + ' ' + (e.label || ''))));
-    ok(label + ': exactly one meal-late penalty remains', entries.filter(e => e.code === 'MEAL_LATE').length === 1);
+    const penalties = entries.filter(e => e.code === 'MEAL_NEVER_LOGGED');
+    const reversals = entries.filter(e => e.code === 'NEVER_LOGGED_VOIDED');
+    ok(label + ': the penalty entry is kept, not deleted (append-only)',
+      penalties.length === 1 && penalties[0].pts === A().RULES.MEAL_NEVER_LOGGED.pts);
+    ok(label + ': exactly one reversing entry is appended',
+      reversals.length === 1 && reversals[0].pts === A().RULES.NEVER_LOGGED_VOIDED.pts);
+    ok(label + ': the never-logged charge nets zero for the meal',
+      penalties.concat(reversals).reduce((a, e) => a + e.pts, 0) === 0);
+    ok(label + ': the now-logged meal carries no "never logged" note', (() => {
+      const lg = A().D().logs[ref];
+      return !!lg && lg.status !== 'missed' && !/never logged/i.test(lg.note || '');
+    })());
   };
+
+  /* Coupling guard: the reversal is the exact opposite of the penalty. */
+  ok('reversal and penalty sum to zero (coupled)',
+    A().RULES.NEVER_LOGGED_VOIDED.pts + A().RULES.MEAL_NEVER_LOGGED.pts === 0);
+
+  /* No unmiss: a meal genuinely never logged keeps its penalty, no reversal. */
+  const standMissed = await setupMissed();
+  {
+    const entries = A().S.points.ledger.filter(e => e.ref === standMissed.meal.id);
+    ok('with no unmiss, the -4 penalty stands unchanged',
+      entries.filter(e => e.code === 'MEAL_NEVER_LOGGED').length === 1);
+    ok('with no unmiss, no reversal entry appears',
+      entries.every(e => e.code !== 'NEVER_LOGGED_VOIDED'));
+  }
 
   const missed = await setupMissed();
   const other = A().Points.award('MEAL_NEVER_LOGGED', { reason: 'other meal was never logged', ref: 'other-meal' });
   A().ACT.unmiss(missed.meal.id); await wait(160);
   A().commitMeal({ mealId: missed.meal.id, ateAt: Date.now() + A().offset, loggedAt: Date.now() + A().offset });
-  penaltyClean(missed.meal.id, 'unmiss re-log');
-  ok('voidAward only removes the matching ref', A().S.points.ledger.some(e => e.id === other.id) && (A().S.ui.pointsFeed || []).some(e => e.id === other.id));
+  reversed(missed.meal.id, 'unmiss re-log');
+  ok('the reversal only touches the matching ref',
+    A().S.points.ledger.some(e => e.id === other.id) &&
+    !A().S.points.ledger.some(e => e.code === 'NEVER_LOGGED_VOIDED' && e.ref === 'other-meal'));
 
   const estMissed = await setupMissed();
   A().ACT.openEstimate(estMissed.meal.id); await wait(160);
   click(act('saveEstimate', estMissed.meal.id)); await wait(220);
-  penaltyClean(estMissed.meal.id, 'estimator overwrite');
+  reversed(estMissed.meal.id, 'estimator overwrite');
 
   const repMissed = await setupMissed();
   A().ACT.modal('replace', { dataset: { arg: repMissed.meal.id } }); await wait(160);
   A().ACT.saveReplace(repMissed.meal.id); await wait(180);
-  penaltyClean(repMissed.meal.id, 'manual replacement overwrite');
+  reversed(repMissed.meal.id, 'manual replacement overwrite');
 }
 
 /* ------------------------------------------------------------------- points */
