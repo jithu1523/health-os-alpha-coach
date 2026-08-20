@@ -25,6 +25,13 @@ const displayTime = ts => new Date(ts).toLocaleTimeString([], { hour: 'numeric',
 
 await wait(320);
 ok('boots without errors', errs.length === 0, errs[0]);
+ok('geometric tokens are theme-mapped', /--geo-cut:/.test(html) && /--mascot-body:/.test(html) && /html\[data-theme="ember"\][\s\S]*--mascot-body/.test(html));
+ok('mascot arcs use pathLength progress', /pathLength="1"/.test(html) && /stroke-dashoffset:calc\(1 - var\(--arc-p\)\)/.test(html));
+ok('all mascot states are CSS-backed', ['m-wake', 'm-cheer', 'm-concern', 'm-rest'].every(k => html.includes('.' + k)) && /m-\$\{reaction\}/.test(html));
+ok('mascot uses CSS variables instead of hardcoded body colors', /class="m-head"/.test(html) && /var\(--mascot-body\)/.test(html) && !/const C=\{/.test(html));
+ok('geometric surfaces are wired', /class="hero geo-panel/.test(html) && /class="hero-rail geo-rail/.test(html) && /\.eat-time::before/.test(html));
+ok('redesign adds no animation dependency', !/motion\.dev|framer-motion|pixi/i.test(html));
+ok('reduced motion stops mascot animation', /prefers-reduced-motion: reduce[\s\S]*\.m-body,\s*\.m-arc\.live,\s*\.m-lid\{animation:none !important\}/.test(html));
 
 /* ---------------------------------------------------------------- onboarding */
 ok('kitchen tracking is off by default', A().invOn() === false);
