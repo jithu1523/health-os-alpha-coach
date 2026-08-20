@@ -1,0 +1,467 @@
+{
+  "_header": {
+    "generatedAt": "2026-08-20T17:04:33.446Z",
+    "note": "Hand-verified ~40-item seed (offline default). Run with --online (needs network) to derive the full table. See FILL_ONLINE.",
+    "attribution": "Contains information from Open Food Facts (https://openfoodfacts.org), made available under the Open Database License (ODbL) v1.0 (https://opendatacommons.org/licenses/odbl/1-0/). Nutrition5k dish ground truth: Google Research (https://github.com/google-research-datasets/Nutrition5k).",
+    "fillOnline": {
+      "openFoodFacts": {
+        "hfDataset": "openfoodfacts/product-database",
+        "browse": "https://huggingface.co/datasets/openfoodfacts/product-database",
+        "format": "parquet (food.parquet)",
+        "license": "ODbL v1.0",
+        "keepFields": [
+          "code",
+          "product_name",
+          "serving_quantity",
+          "nutriments.energy-kcal_serving",
+          "nutriments.energy-kcal_100g",
+          "nutriments.proteins_serving",
+          "nutriments.proteins_100g",
+          "nutriments.carbohydrates_serving",
+          "nutriments.carbohydrates_100g",
+          "nutriments.fat_serving",
+          "nutriments.fat_100g"
+        ],
+        "filter": "code != null AND (energy-kcal_serving OR energy-kcal_100g) present",
+        "servingRule": "prefer *_serving; else scale *_100g by serving_quantity/100 (default 100g)."
+      },
+      "nutrition5k": {
+        "hfDatasets": [
+          "panikos/nutrition5k_dataset",
+          "TeeA/nutrition5k-food-name-gemini"
+        ],
+        "source": "https://github.com/google-research-datasets/Nutrition5k",
+        "use": "per-dish {calories, mass_g, protein, carbs, fat} -> calibrate Food-101 class typical-portion map; sanity-check per-serving kcal."
+      },
+      "food101Labels": {
+        "hfDataset": "ethz/food101",
+        "note": "101 class names become the `key` for source:\"label\" lookups (underscores normalized)."
+      }
+    }
+  },
+  "attribution": "Contains information from Open Food Facts (https://openfoodfacts.org), made available under the Open Database License (ODbL) v1.0 (https://opendatacommons.org/licenses/odbl/1-0/). Nutrition5k dish ground truth: Google Research (https://github.com/google-research-datasets/Nutrition5k).",
+  "items": [
+    {
+      "key": "apple_pie",
+      "name": "Apple pie (1 slice)",
+      "kcal": 296,
+      "protein_g": 2.4,
+      "carbs_g": 42.5,
+      "fat_g": 13.8,
+      "serving_g": 125,
+      "source": "seed"
+    },
+    {
+      "key": "pizza",
+      "name": "Cheese pizza (1 slice)",
+      "kcal": 285,
+      "protein_g": 12.2,
+      "carbs_g": 35.6,
+      "fat_g": 10.4,
+      "serving_g": 107,
+      "source": "seed"
+    },
+    {
+      "key": "hamburger",
+      "name": "Hamburger (1 sandwich)",
+      "kcal": 354,
+      "protein_g": 20,
+      "carbs_g": 29,
+      "fat_g": 17,
+      "serving_g": 150,
+      "source": "seed"
+    },
+    {
+      "key": "french_fries",
+      "name": "French fries (medium)",
+      "kcal": 365,
+      "protein_g": 4,
+      "carbs_g": 48,
+      "fat_g": 17,
+      "serving_g": 117,
+      "source": "seed"
+    },
+    {
+      "key": "caesar_salad",
+      "name": "Caesar salad (1 bowl)",
+      "kcal": 190,
+      "protein_g": 6,
+      "carbs_g": 7,
+      "fat_g": 16,
+      "serving_g": 200,
+      "source": "seed"
+    },
+    {
+      "key": "fried_rice",
+      "name": "Fried rice (1 cup)",
+      "kcal": 238,
+      "protein_g": 6,
+      "carbs_g": 45,
+      "fat_g": 4,
+      "serving_g": 198,
+      "source": "seed"
+    },
+    {
+      "key": "grilled_salmon",
+      "name": "Grilled salmon (1 fillet)",
+      "kcal": 280,
+      "protein_g": 39,
+      "carbs_g": 0,
+      "fat_g": 12.5,
+      "serving_g": 154,
+      "source": "seed"
+    },
+    {
+      "key": "steak",
+      "name": "Beef steak (170g cooked)",
+      "kcal": 430,
+      "protein_g": 50,
+      "carbs_g": 0,
+      "fat_g": 26,
+      "serving_g": 170,
+      "source": "seed"
+    },
+    {
+      "key": "omelette",
+      "name": "Two-egg omelette",
+      "kcal": 188,
+      "protein_g": 13,
+      "carbs_g": 1,
+      "fat_g": 14,
+      "serving_g": 120,
+      "source": "seed"
+    },
+    {
+      "key": "pancakes",
+      "name": "Pancakes (2)",
+      "kcal": 175,
+      "protein_g": 5,
+      "carbs_g": 22,
+      "fat_g": 7,
+      "serving_g": 77,
+      "source": "seed"
+    },
+    {
+      "key": "waffles",
+      "name": "Waffle (1)",
+      "kcal": 218,
+      "protein_g": 6,
+      "carbs_g": 25,
+      "fat_g": 11,
+      "serving_g": 75,
+      "source": "seed"
+    },
+    {
+      "key": "sushi",
+      "name": "Sushi roll (6 pieces)",
+      "kcal": 255,
+      "protein_g": 9,
+      "carbs_g": 38,
+      "fat_g": 7,
+      "serving_g": 200,
+      "source": "seed"
+    },
+    {
+      "key": "ramen",
+      "name": "Ramen (1 bowl)",
+      "kcal": 436,
+      "protein_g": 18,
+      "carbs_g": 54,
+      "fat_g": 17,
+      "serving_g": 500,
+      "source": "seed"
+    },
+    {
+      "key": "chicken_curry",
+      "name": "Chicken curry (1 cup)",
+      "kcal": 293,
+      "protein_g": 24,
+      "carbs_g": 10,
+      "fat_g": 18,
+      "serving_g": 240,
+      "source": "seed"
+    },
+    {
+      "key": "guacamole",
+      "name": "Guacamole (2 tbsp)",
+      "kcal": 45,
+      "protein_g": 0.6,
+      "carbs_g": 3,
+      "fat_g": 4,
+      "serving_g": 30,
+      "source": "seed"
+    },
+    {
+      "key": "hummus",
+      "name": "Hummus (2 tbsp)",
+      "kcal": 71,
+      "protein_g": 2,
+      "carbs_g": 6,
+      "fat_g": 5,
+      "serving_g": 30,
+      "source": "seed"
+    },
+    {
+      "key": "donuts",
+      "name": "Glazed donut (1)",
+      "kcal": 269,
+      "protein_g": 3,
+      "carbs_g": 31,
+      "fat_g": 15,
+      "serving_g": 60,
+      "source": "seed"
+    },
+    {
+      "key": "ice_cream",
+      "name": "Vanilla ice cream (1/2 cup)",
+      "kcal": 137,
+      "protein_g": 2.3,
+      "carbs_g": 16,
+      "fat_g": 7.3,
+      "serving_g": 66,
+      "source": "seed"
+    },
+    {
+      "key": "cheesecake",
+      "name": "Cheesecake (1 slice)",
+      "kcal": 401,
+      "protein_g": 7,
+      "carbs_g": 32,
+      "fat_g": 28,
+      "serving_g": 125,
+      "source": "seed"
+    },
+    {
+      "key": "spaghetti_bolognese",
+      "name": "Spaghetti bolognese (1 plate)",
+      "kcal": 460,
+      "protein_g": 22,
+      "carbs_g": 58,
+      "fat_g": 15,
+      "serving_g": 330,
+      "source": "seed"
+    },
+    {
+      "key": "grilled_cheese_sandwich",
+      "name": "Grilled cheese sandwich",
+      "kcal": 400,
+      "protein_g": 16,
+      "carbs_g": 33,
+      "fat_g": 23,
+      "serving_g": 120,
+      "source": "seed"
+    },
+    {
+      "key": "tacos",
+      "name": "Beef taco (1)",
+      "kcal": 210,
+      "protein_g": 9,
+      "carbs_g": 21,
+      "fat_g": 10,
+      "serving_g": 100,
+      "source": "seed"
+    },
+    {
+      "key": "macaroni_and_cheese",
+      "name": "Macaroni and cheese (1 cup)",
+      "kcal": 310,
+      "protein_g": 13,
+      "carbs_g": 40,
+      "fat_g": 12,
+      "serving_g": 200,
+      "source": "seed"
+    },
+    {
+      "key": "chocolate_cake",
+      "name": "Chocolate cake (1 slice)",
+      "kcal": 352,
+      "protein_g": 5,
+      "carbs_g": 51,
+      "fat_g": 16,
+      "serving_g": 95,
+      "source": "seed"
+    },
+    {
+      "key": "french_toast",
+      "name": "French toast (1 slice)",
+      "kcal": 149,
+      "protein_g": 5,
+      "carbs_g": 16,
+      "fat_g": 7,
+      "serving_g": 65,
+      "source": "seed"
+    },
+    {
+      "key": "banana",
+      "name": "Banana (1 medium)",
+      "kcal": 105,
+      "protein_g": 1.3,
+      "carbs_g": 27,
+      "fat_g": 0.4,
+      "serving_g": 118,
+      "source": "seed"
+    },
+    {
+      "key": "apple",
+      "name": "Apple (1 medium)",
+      "kcal": 95,
+      "protein_g": 0.5,
+      "carbs_g": 25,
+      "fat_g": 0.3,
+      "serving_g": 182,
+      "source": "seed"
+    },
+    {
+      "key": "egg",
+      "name": "Egg (1 large)",
+      "kcal": 72,
+      "protein_g": 6.3,
+      "carbs_g": 0.4,
+      "fat_g": 4.8,
+      "serving_g": 50,
+      "source": "seed"
+    },
+    {
+      "key": "white_rice",
+      "name": "White rice (1 cup cooked)",
+      "kcal": 205,
+      "protein_g": 4.3,
+      "carbs_g": 45,
+      "fat_g": 0.4,
+      "serving_g": 158,
+      "source": "seed"
+    },
+    {
+      "key": "chicken_breast",
+      "name": "Chicken breast (1 cooked)",
+      "kcal": 284,
+      "protein_g": 53,
+      "carbs_g": 0,
+      "fat_g": 6.2,
+      "serving_g": 172,
+      "source": "seed"
+    },
+    {
+      "key": "oatmeal",
+      "name": "Oatmeal (1 cup cooked)",
+      "kcal": 166,
+      "protein_g": 5.9,
+      "carbs_g": 28,
+      "fat_g": 3.6,
+      "serving_g": 234,
+      "source": "seed"
+    },
+    {
+      "key": "greek_yogurt",
+      "name": "Greek yogurt, nonfat (1 cup)",
+      "kcal": 100,
+      "protein_g": 17,
+      "carbs_g": 6,
+      "fat_g": 0.7,
+      "serving_g": 170,
+      "source": "seed"
+    },
+    {
+      "key": "almonds",
+      "name": "Almonds (1 oz, ~23)",
+      "kcal": 164,
+      "protein_g": 6,
+      "carbs_g": 6,
+      "fat_g": 14,
+      "serving_g": 28,
+      "source": "seed"
+    },
+    {
+      "key": "peanut_butter",
+      "name": "Peanut butter (2 tbsp)",
+      "kcal": 188,
+      "protein_g": 8,
+      "carbs_g": 6,
+      "fat_g": 16,
+      "serving_g": 32,
+      "source": "seed"
+    },
+    {
+      "key": "whole_milk",
+      "name": "Whole milk (1 cup)",
+      "kcal": 149,
+      "protein_g": 7.7,
+      "carbs_g": 12,
+      "fat_g": 8,
+      "serving_g": 244,
+      "source": "seed"
+    },
+    {
+      "key": "bread_slice",
+      "name": "White bread (1 slice)",
+      "kcal": 75,
+      "protein_g": 2.6,
+      "carbs_g": 14,
+      "fat_g": 1,
+      "serving_g": 28,
+      "source": "seed"
+    },
+    {
+      "key": "avocado",
+      "name": "Avocado (1/2 fruit)",
+      "kcal": 160,
+      "protein_g": 2,
+      "carbs_g": 9,
+      "fat_g": 15,
+      "serving_g": 100,
+      "source": "seed"
+    },
+    {
+      "key": "broccoli",
+      "name": "Broccoli (1 cup cooked)",
+      "kcal": 55,
+      "protein_g": 3.7,
+      "carbs_g": 11,
+      "fat_g": 0.6,
+      "serving_g": 156,
+      "source": "seed"
+    },
+    {
+      "key": "orange",
+      "name": "Orange (1 medium)",
+      "kcal": 62,
+      "protein_g": 1.2,
+      "carbs_g": 15,
+      "fat_g": 0.2,
+      "serving_g": 131,
+      "source": "seed"
+    },
+    {
+      "key": "protein_shake",
+      "name": "Whey protein shake (1 scoop)",
+      "kcal": 120,
+      "protein_g": 24,
+      "carbs_g": 3,
+      "fat_g": 1.5,
+      "serving_g": 31,
+      "source": "seed"
+    },
+    {
+      "key": "coca_cola",
+      "name": "Coca-Cola Classic (330ml can)",
+      "barcode": "5449000000996",
+      "kcal": 139,
+      "protein_g": 0,
+      "carbs_g": 35,
+      "fat_g": 0,
+      "serving_g": 330,
+      "source": "openfoodfacts"
+    },
+    {
+      "key": "nutella",
+      "name": "Nutella (1 tbsp, 15g)",
+      "barcode": "3017620422003",
+      "kcal": 80,
+      "protein_g": 0.9,
+      "carbs_g": 8.6,
+      "fat_g": 4.6,
+      "serving_g": 15,
+      "source": "openfoodfacts"
+    }
+  ]
+}

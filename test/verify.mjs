@@ -48,6 +48,24 @@ ok('supabase adapter is dormant and offline', A().Store.adapters.supabase.enable
   ok('supabase points ledger accepts the append-only reversal code', /NEVER_LOGGED_VOIDED/.test(sql));
 }
 
+/* ------------------------------------------------------------ food lookup */
+ok('food lookup ships off by default', A().foodLookupOn() === false);
+ok('food lookup off leaves the existing dish estimator unchanged', A().estimateDish('pizza', 'regular').kcal === 780);
+{
+  const manual = A().estimateKcal({ source: 'manual', key: 'pizza' });
+  ok('manual food lookup is an estimate with confidence', manual.isEstimate === true && manual.kcal === 285 && manual.confidence === 0.7);
+  ok('manual exact match can be used without low-confidence warning', manual.needsConfirmation === false);
+  const barcode = A().estimateKcal({ source: 'barcode', key: '5449000000996' });
+  ok('barcode lookup uses the barcode index', barcode.kcal === 139 && barcode.confidence === 0.95);
+  const label = A().estimateKcal({ source: 'label', key: 'apple_pie' });
+  ok('label lookup keeps the Phase 3 classifier seam', label.kcal === 296 && label.confidence === 0.8);
+  const fuzzy = A().estimateKcal({ source: 'manual', key: 'cola' });
+  ok('low-confidence food lookup asks instead of asserting', fuzzy.needsConfirmation === true && fuzzy.confidence < 0.5);
+  const miss = A().estimateKcal({ source: 'manual', key: 'moon soup' });
+  ok('food lookup miss does not fabricate calories', miss.kcal === null && miss.needsConfirmation === true);
+  ok('food lookup carries ODbL attribution', /Open Food Facts/.test(manual.attribution));
+}
+
 /* ---------------------------------------------------------------- onboarding */
 ok('kitchen tracking is off by default', A().invOn() === false);
 for (let i = 0; i < 6; i++) { click(act('ob', 'next')); await wait(35); }
@@ -77,6 +95,20 @@ ok('first meal uses the plan interval, not a clock time', (() => {
   return g >= A().PLAN.first.min && g <= A().PLAN.first.ideal;
 })());
 ok('no phantom shortages with the kitchen off', A().shortages().length === 0);
+
+{
+  A().S.prefs.foodLookup = true;
+  A().S.ui.foodLookup = { mode: 'manual', key: 'pizza', portion: 1, result: A().estimateKcal({ source: 'manual', key: 'pizza' }) };
+  const before = A().S.points.ledger.length;
+  A().ACT.useFoodEstimate(); await wait(180);
+  ok('food lookup result fills the existing eating-out modal', /Using a food lookup estimate/.test(txt()) && /Cheese pizza/.test(txt()));
+  click(doc.querySelector('[data-act="saveEstimate"]')); await wait(420);
+  const extra = d().extra.items[d().extra.items.length - 1];
+  ok('food lookup log uses the existing extra-meal path', extra.name === 'Cheese pizza (1 slice)' && extra.kcal === 285);
+  ok('food lookup log still awards through the normal honest-log code',
+    A().S.points.ledger.slice(before).some(e => e.code === 'LOGGED_HONESTLY'));
+  A().S.prefs.foodLookup = false;
+}
 
 /* --------------------------------------------------------- sequential locking */
 ok('only the first meal is open', A().isOpen(A().sched().rows[0]) && A().isLocked(A().sched().rows[1]));

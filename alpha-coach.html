@@ -1023,6 +1023,63 @@ function estimateDish(id,portion){
   return {name:dish.n, kcal:Math.round(dish.k*mult), p:Math.round(dish.p*mult),
           c:Math.round(dish.c*mult), f:Math.round(dish.f*mult), mult, dish};
 }
+const FOOD_DB={"attribution":"Contains information from Open Food Facts (https://openfoodfacts.org), made available under the Open Database License (ODbL) v1.0 (https://opendatacommons.org/licenses/odbl/1-0/). Nutrition5k dish ground truth: Google Research (https://github.com/google-research-datasets/Nutrition5k).","items":[{"key":"apple_pie","name":"Apple pie (1 slice)","kcal":296,"protein_g":2.4,"carbs_g":42.5,"fat_g":13.8,"serving_g":125,"source":"seed"},{"key":"pizza","name":"Cheese pizza (1 slice)","kcal":285,"protein_g":12.2,"carbs_g":35.6,"fat_g":10.4,"serving_g":107,"source":"seed"},{"key":"hamburger","name":"Hamburger (1 sandwich)","kcal":354,"protein_g":20,"carbs_g":29,"fat_g":17,"serving_g":150,"source":"seed"},{"key":"french_fries","name":"French fries (medium)","kcal":365,"protein_g":4,"carbs_g":48,"fat_g":17,"serving_g":117,"source":"seed"},{"key":"caesar_salad","name":"Caesar salad (1 bowl)","kcal":190,"protein_g":6,"carbs_g":7,"fat_g":16,"serving_g":200,"source":"seed"},{"key":"fried_rice","name":"Fried rice (1 cup)","kcal":238,"protein_g":6,"carbs_g":45,"fat_g":4,"serving_g":198,"source":"seed"},{"key":"grilled_salmon","name":"Grilled salmon (1 fillet)","kcal":280,"protein_g":39,"carbs_g":0,"fat_g":12.5,"serving_g":154,"source":"seed"},{"key":"steak","name":"Beef steak (170g cooked)","kcal":430,"protein_g":50,"carbs_g":0,"fat_g":26,"serving_g":170,"source":"seed"},{"key":"omelette","name":"Two-egg omelette","kcal":188,"protein_g":13,"carbs_g":1,"fat_g":14,"serving_g":120,"source":"seed"},{"key":"pancakes","name":"Pancakes (2)","kcal":175,"protein_g":5,"carbs_g":22,"fat_g":7,"serving_g":77,"source":"seed"},{"key":"waffles","name":"Waffle (1)","kcal":218,"protein_g":6,"carbs_g":25,"fat_g":11,"serving_g":75,"source":"seed"},{"key":"sushi","name":"Sushi roll (6 pieces)","kcal":255,"protein_g":9,"carbs_g":38,"fat_g":7,"serving_g":200,"source":"seed"},{"key":"ramen","name":"Ramen (1 bowl)","kcal":436,"protein_g":18,"carbs_g":54,"fat_g":17,"serving_g":500,"source":"seed"},{"key":"chicken_curry","name":"Chicken curry (1 cup)","kcal":293,"protein_g":24,"carbs_g":10,"fat_g":18,"serving_g":240,"source":"seed"},{"key":"guacamole","name":"Guacamole (2 tbsp)","kcal":45,"protein_g":0.6,"carbs_g":3,"fat_g":4,"serving_g":30,"source":"seed"},{"key":"hummus","name":"Hummus (2 tbsp)","kcal":71,"protein_g":2,"carbs_g":6,"fat_g":5,"serving_g":30,"source":"seed"},{"key":"donuts","name":"Glazed donut (1)","kcal":269,"protein_g":3,"carbs_g":31,"fat_g":15,"serving_g":60,"source":"seed"},{"key":"ice_cream","name":"Vanilla ice cream (1/2 cup)","kcal":137,"protein_g":2.3,"carbs_g":16,"fat_g":7.3,"serving_g":66,"source":"seed"},{"key":"cheesecake","name":"Cheesecake (1 slice)","kcal":401,"protein_g":7,"carbs_g":32,"fat_g":28,"serving_g":125,"source":"seed"},{"key":"spaghetti_bolognese","name":"Spaghetti bolognese (1 plate)","kcal":460,"protein_g":22,"carbs_g":58,"fat_g":15,"serving_g":330,"source":"seed"},{"key":"grilled_cheese_sandwich","name":"Grilled cheese sandwich","kcal":400,"protein_g":16,"carbs_g":33,"fat_g":23,"serving_g":120,"source":"seed"},{"key":"tacos","name":"Beef taco (1)","kcal":210,"protein_g":9,"carbs_g":21,"fat_g":10,"serving_g":100,"source":"seed"},{"key":"macaroni_and_cheese","name":"Macaroni and cheese (1 cup)","kcal":310,"protein_g":13,"carbs_g":40,"fat_g":12,"serving_g":200,"source":"seed"},{"key":"chocolate_cake","name":"Chocolate cake (1 slice)","kcal":352,"protein_g":5,"carbs_g":51,"fat_g":16,"serving_g":95,"source":"seed"},{"key":"french_toast","name":"French toast (1 slice)","kcal":149,"protein_g":5,"carbs_g":16,"fat_g":7,"serving_g":65,"source":"seed"},{"key":"banana","name":"Banana (1 medium)","kcal":105,"protein_g":1.3,"carbs_g":27,"fat_g":0.4,"serving_g":118,"source":"seed"},{"key":"apple","name":"Apple (1 medium)","kcal":95,"protein_g":0.5,"carbs_g":25,"fat_g":0.3,"serving_g":182,"source":"seed"},{"key":"egg","name":"Egg (1 large)","kcal":72,"protein_g":6.3,"carbs_g":0.4,"fat_g":4.8,"serving_g":50,"source":"seed"},{"key":"white_rice","name":"White rice (1 cup cooked)","kcal":205,"protein_g":4.3,"carbs_g":45,"fat_g":0.4,"serving_g":158,"source":"seed"},{"key":"chicken_breast","name":"Chicken breast (1 cooked)","kcal":284,"protein_g":53,"carbs_g":0,"fat_g":6.2,"serving_g":172,"source":"seed"},{"key":"oatmeal","name":"Oatmeal (1 cup cooked)","kcal":166,"protein_g":5.9,"carbs_g":28,"fat_g":3.6,"serving_g":234,"source":"seed"},{"key":"greek_yogurt","name":"Greek yogurt, nonfat (1 cup)","kcal":100,"protein_g":17,"carbs_g":6,"fat_g":0.7,"serving_g":170,"source":"seed"},{"key":"almonds","name":"Almonds (1 oz, ~23)","kcal":164,"protein_g":6,"carbs_g":6,"fat_g":14,"serving_g":28,"source":"seed"},{"key":"peanut_butter","name":"Peanut butter (2 tbsp)","kcal":188,"protein_g":8,"carbs_g":6,"fat_g":16,"serving_g":32,"source":"seed"},{"key":"whole_milk","name":"Whole milk (1 cup)","kcal":149,"protein_g":7.7,"carbs_g":12,"fat_g":8,"serving_g":244,"source":"seed"},{"key":"bread_slice","name":"White bread (1 slice)","kcal":75,"protein_g":2.6,"carbs_g":14,"fat_g":1,"serving_g":28,"source":"seed"},{"key":"avocado","name":"Avocado (1/2 fruit)","kcal":160,"protein_g":2,"carbs_g":9,"fat_g":15,"serving_g":100,"source":"seed"},{"key":"broccoli","name":"Broccoli (1 cup cooked)","kcal":55,"protein_g":3.7,"carbs_g":11,"fat_g":0.6,"serving_g":156,"source":"seed"},{"key":"orange","name":"Orange (1 medium)","kcal":62,"protein_g":1.2,"carbs_g":15,"fat_g":0.2,"serving_g":131,"source":"seed"},{"key":"protein_shake","name":"Whey protein shake (1 scoop)","kcal":120,"protein_g":24,"carbs_g":3,"fat_g":1.5,"serving_g":31,"source":"seed"},{"key":"coca_cola","name":"Coca-Cola Classic (330ml can)","barcode":"5449000000996","kcal":139,"protein_g":0,"carbs_g":35,"fat_g":0,"serving_g":330,"source":"openfoodfacts"},{"key":"nutella","name":"Nutella (1 tbsp, 15g)","barcode":"3017620422003","kcal":80,"protein_g":0.9,"carbs_g":8.6,"fat_g":4.6,"serving_g":15,"source":"openfoodfacts"}]};
+const CONFIDENCE={BARCODE_EXACT:.95,LABEL_EXACT:.8,MANUAL_EXACT:.7,MANUAL_FUZZY:.4,MISS:0};
+const CONFIRM_THRESHOLD=.5;
+function normalizeFoodKey(s){
+  return String(s==null?'':s).toLowerCase().replace(/[_/]+/g,' ').replace(/[^a-z0-9\s]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function loadFoodDb(db){
+  const byKey=new Map(), byBarcode=new Map();
+  (db.items||[]).forEach(it=>{
+    if(it.key) byKey.set(normalizeFoodKey(it.key),it);
+    if(it.name){ const nk=normalizeFoodKey(it.name); if(!byKey.has(nk)) byKey.set(nk,it); }
+    if(it.barcode) byBarcode.set(String(it.barcode).trim(),it);
+  });
+  return {attribution:db.attribution||'',items:db.items||[],byKey,byBarcode};
+}
+const FoodDb=loadFoodDb(FOOD_DB);
+function fuzzyFoodFind(db,nk){
+  const tokens=nk.split(' ').filter(Boolean);
+  let best=null,bestScore=0;
+  for(const it of db.items){
+    const name=normalizeFoodKey(it.name||it.key||''); if(!name) continue;
+    let score=0;
+    if(name.includes(nk)||nk.includes(name)) score=3;
+    else{ const nameTokens=new Set(name.split(' ')); score=tokens.reduce((a,t)=>a+(nameTokens.has(t)?1:0),0); }
+    if(score>bestScore){bestScore=score;best=it;}
+  }
+  return bestScore>0?best:null;
+}
+function round2(n){return Math.round(n*100)/100;}
+function estimateKcal({source='manual',key='',portion=1}={}){
+  const p=Number.isFinite(+portion)&&+portion>0?+portion:1;
+  const base={source,isEstimate:true,portion:p,attribution:FoodDb.attribution};
+  let hit=null, confidence=CONFIDENCE.MISS;
+  if(source==='barcode'){
+    hit=FoodDb.byBarcode.get(String(key==null?'':key).trim())||null;
+    if(hit) confidence=CONFIDENCE.BARCODE_EXACT;
+  }else if(source==='label'){
+    hit=FoodDb.byKey.get(normalizeFoodKey(key))||null;
+    if(hit) confidence=CONFIDENCE.LABEL_EXACT;
+  }else{
+    const nk=normalizeFoodKey(key);
+    hit=FoodDb.byKey.get(nk)||null;
+    if(hit) confidence=CONFIDENCE.MANUAL_EXACT;
+    else if(nk){ hit=fuzzyFoodFind(FoodDb,nk); if(hit) confidence=CONFIDENCE.MANUAL_FUZZY; }
+  }
+  if(!hit) return {...base,kcal:null,protein_g:null,carbs_g:null,fat_g:null,confidence:0,needsConfirmation:true,matchedKey:null,matchedName:null,servingG:null,note:`No match for ${source} "${key}". Needs user confirmation — not fabricating a value.`};
+  const scale=v=>v==null?null:round2(v*p);
+  return {...base,kcal:scale(hit.kcal),protein_g:scale(hit.protein_g),carbs_g:scale(hit.carbs_g),fat_g:scale(hit.fat_g),
+    confidence,needsConfirmation:confidence<CONFIRM_THRESHOLD,matchedKey:hit.key||normalizeFoodKey(hit.name),
+    matchedName:hit.name,servingG:hit.serving_g==null?null:round2(hit.serving_g*p),
+    note:`Estimate from ${hit.source||'foodDb'} for "${hit.name}" (typical serving x${p}).`};
+}
+function foodEstimateShape(r){
+  if(!r) return null;
+  return {name:r.matchedName||r.matchedKey||'Food lookup',kcal:r.kcal||0,p:r.protein_g||0,c:r.carbs_g||0,f:r.fat_g||0,result:r};
+}
+function foodLookupOn(){return !!S.prefs.foodLookup;}
 
 const DEFAULT_SUPP_PLAN=[
   {ref:'whey',dose:30,when:'Post-workout'},
@@ -1427,14 +1484,14 @@ function defaultState(){
     activeDay:null, days:{}, history:[],
     prefs:{goal:'cut',kcal:2000,protein:170,carbs:180,fat:60,diet:'none',allergies:[],like:[],dislike:[],refuse:[],
            cuisines:['Indian'],cooking:'basic',equipment:['Hob','Fridge'],prepTime:20,budget:'mid',
-           wake:'07:00',sleep:'23:00',flexible:false},
+           wake:'07:00',sleep:'23:00',flexible:false,foodLookup:false},
     suppPlan:DEFAULT_SUPP_PLAN.map(s=>({...s,id:uid(),source:'user'})),
     inv:{items:{},last:null,mismatch:[],enabled:false},
     points:blankPoints(), dislikedMeals:[], weights:[], sleepLog:[], notify:false, theme:'grove',
     shop:{}, swaps:{}, jugaad:null,
     workout:null, chat:[],
     ui:{screen:'today', modal:null, modalArg:null, celebrate:null, online:true, invTab:'need', shopTab:'urgent',
-        eatTimeSeen:false, eatTimeFull:false}
+        eatTimeSeen:false, eatTimeFull:false, foodLookup:{mode:'manual',key:'',portion:1,result:null}, estFoodResult:null}
   };
 }
 let S=Store.loadSnapshot(Store.key)||defaultState();
@@ -3513,6 +3570,22 @@ function ScreenSettings(){
       </div>
     </section>
     <section class="card">
+      <div class="spread" style="gap:12px;align-items:flex-start">
+        <div style="min-width:0">
+          <div style="font-weight:600;font-size:14px">Food lookup</div>
+          <p class="talk" style="font-size:13px;color:var(--muted);margin-top:4px">
+            ${foodLookupOn()?'On — search the bundled food table or a barcode. Every result is an estimate with confidence.'
+                            :'Off — no food database is used. Existing meals, logging and points stay exactly as they are.'}</p>
+        </div>
+        <button class="btn sm ${foodLookupOn()?'':'primary'}" data-act="foodLookupToggle">${foodLookupOn()?'Turn off':'Turn on'}</button>
+      </div>
+      ${foodLookupOn()?`<div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn sm primary" data-act="modal" data-v="foodlookup">${ic('sparkleIcon',14)} Look up food</button>
+        <span class="tag">Estimate only</span>
+      </div>
+      <p class="talk" style="font-size:12.5px;color:var(--faint);margin-top:8px">Open Food Facts data is shown with attribution. Low-confidence matches ask you to confirm before logging.</p>`:''}
+    </section>
+    <section class="card">
       <div class="label" style="margin-bottom:10px">Look</div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
         ${[['grove','Grove'],['ember','Ember']].map(([v,l])=>
@@ -4112,6 +4185,48 @@ function Overlay(){
         </div>`;
     },
 
+    foodlookup(){
+      if(!foodLookupOn()) return `<div class="modal-h"><div><h2 style="font-size:19px">Food lookup is off</h2>
+        <p class="meta" style="margin-top:4px">Turn it on in Settings first</p></div>
+        <button class="modal-x" data-act="close">${ic('x',16)}</button></div>
+        <p class="talk" style="font-size:14px;color:var(--muted)">Meals, schedule and points work without this. The food table is optional.</p>`;
+      const st=S.ui.foodLookup||{}, mode=st.mode||'manual', key=st.key||'', portion=st.portion||1;
+      const r=st.result;
+      const sourceLabel={manual:'Manual search',barcode:'Barcode',label:'Food-101 label'}[mode]||'Manual search';
+      const examples={manual:'pizza or greek yogurt',barcode:'5449000000996',label:'apple_pie'}[mode];
+      return `<div class="modal-h"><div><h2 style="font-size:19px">Food lookup</h2>
+        <p class="meta" style="margin-top:4px">Bundled sample DB · estimate with confidence</p></div>
+        <button class="modal-x" data-act="close" aria-label="Close">${ic('x',16)}</button></div>
+        <div class="row" style="gap:7px;flex-wrap:wrap;margin-bottom:14px">
+          ${[['manual','Manual'],['barcode','Barcode'],['label','Label seam']].map(([v,l])=>`<button class="chip" data-act="foodMode" data-v="${v}" aria-pressed="${mode===v}">${l}</button>`).join('')}
+        </div>
+        <label class="field"><span>${sourceLabel}</span><input class="input" id="foodKey" data-keep="foodKey" value="${esc(key)}" placeholder="${examples}"></label>
+        <label class="field"><span>Portion multiplier</span><input class="input" id="foodPortion" data-keep="foodPortion" type="number" step="0.1" min="0.1" value="${esc(portion)}"></label>
+        <button class="btn primary block" data-act="foodLookupRun">${ic('sparkleIcon',15)} Estimate food</button>
+        <div class="label" style="margin:16px 0 8px">Quick samples</div>
+        <div class="row" style="gap:7px;flex-wrap:wrap">
+          ${FoodDb.items.slice(0,8).map(x=>`<button class="chip" data-act="foodPick" data-v="${esc(x.key)}">${esc(x.name.replace(/\s*\(.+?\)/,''))}</button>`).join('')}
+        </div>
+        ${r?`
+          ${r.kcal==null?`<div class="banner warn" style="margin-top:14px">${ic('alert',17,1.7,'var(--warn)')}<p>No match. I am not inventing calories for that input.</p></div>`:
+          r.needsConfirmation?`<div class="banner warn" style="margin-top:14px">${ic('alert',17,1.7,'var(--warn)')}<p>Possible match: ${esc(r.matchedName)} at ${Math.round(r.confidence*100)}% confidence. Use a more exact name, barcode or label before logging; I am not treating this as a result yet.</p></div>`:`
+          <div class="estout" style="margin-top:16px">
+            <div><b>${r.kcal}</b><span>kcal est.</span></div>
+            <div><b>${r.protein_g} g</b><span>protein</span></div>
+            <div><b>${r.carbs_g} g</b><span>carbs</span></div>
+            <div><b>${r.fat_g} g</b><span>fat</span></div>
+          </div>
+          <div class="row" style="gap:7px;flex-wrap:wrap;margin-top:10px">
+            <span class="pillbadge ${r.needsConfirmation?'peach':'mint'}">${Math.round(r.confidence*100)}% confidence</span>
+            <span class="pillbadge lime">Estimate</span>
+            <span class="pillbadge lilac">${esc(r.source)}</span>
+          </div>
+          <button class="btn block" style="margin-top:12px" data-act="useFoodEstimate">Use in eating-out log</button>
+          <p class="talk" style="font-size:12.5px;color:var(--muted);margin-top:9px">An estimate, not a measurement. ${esc(r.note)}</p>`}
+        `:''}
+        <p class="talk" style="font-size:11.5px;color:var(--faint);margin-top:14px">${esc(FoodDb.attribution)}</p>`;
+    },
+
     /* the reward reveal */
     reward(){
       const r=S.points.pending||pickSurprise();
@@ -4252,7 +4367,8 @@ function Overlay(){
     estimate(){
       const sel=S.ui.estDish||DISHES[0].id;
       const portion=S.ui.estPortion||'regular';
-      const e=estimateDish(sel,portion);
+      const lookup=foodEstimateShape(S.ui.estFoodResult);
+      const e=lookup||estimateDish(sel,portion);
       const target=S.ui.estTarget;      // a meal id, or null for "extra"
       const row=target?activeRows().find(r=>r.meal.id===target):null;
       const shot=S.ui.estPhoto;
@@ -4272,6 +4388,9 @@ function Overlay(){
         </div>
 
         <div class="label" style="margin:16px 0 8px">Closest match</div>
+        ${lookup?`<div class="banner" style="margin-bottom:12px">${ic('sparkleIcon',17,1.7,'var(--accent)')}
+          <div style="flex:1"><p>Using a food lookup estimate for <b>${esc(e.name)}</b>.</p>
+          <button class="btn xs ghost" style="margin-top:8px" data-act="estClearFood">Use the dish list instead</button></div></div>`:''}
         <div class="row" style="gap:6px;flex-wrap:wrap">
           ${DISHES.map(x=>`<button class="chip" data-act="estDish" data-v="${x.id}" aria-pressed="${sel===x.id}">${esc(x.n)}</button>`).join('')}
         </div>
@@ -4287,7 +4406,7 @@ function Overlay(){
           <div><b>${e.f} g</b><span>fat</span></div>
         </div>
         <p class="talk" style="font-size:12.5px;color:var(--muted);margin-top:9px">
-          An estimate, not a measurement — restaurant portions vary by roughly a third either way. Adjust it if you know better.</p>
+          An estimate, not a measurement — restaurant portions vary by roughly a third either way. ${lookup?`Lookup confidence ${Math.round(lookup.result.confidence*100)}%.`:''} Adjust it if you know better.</p>
         ${eatTimeControl('estEatTime',target)}
         <div class="grid g2" style="gap:0 12px;margin-top:12px">
           <label class="field"><span>Calories</span><input class="input" id="estK" type="number" value="${e.kcal}"></label>
@@ -4644,10 +4763,43 @@ const ACT={
   },
 
   /* ---------- eating out ---------- */
+  foodLookupToggle(){
+    S.prefs.foodLookup=!foodLookupOn();
+    if(!S.prefs.foodLookup){ S.ui.foodLookup={mode:'manual',key:'',portion:1,result:null}; S.ui.estFoodResult=null; }
+    save(); render();
+    toast(S.prefs.foodLookup?'Food lookup on. Results are estimates with confidence.':'Food lookup off. Existing logging stays unchanged.');
+  },
+  foodMode(v){
+    S.ui.foodLookup=Object.assign({mode:'manual',key:'',portion:1,result:null},S.ui.foodLookup||{},{mode:v,result:null});
+    renderOverlayOnly();
+  },
+  foodPick(v){
+    const r=estimateKcal({source:'manual',key:v,portion:1});
+    S.ui.foodLookup={mode:'manual',key:v,portion:1,result:r};
+    renderOverlayOnly();
+  },
+  foodLookupRun(){
+    if(!foodLookupOn()) return toast('Turn on food lookup first.');
+    const st=S.ui.foodLookup||{}, mode=st.mode||'manual';
+    const key=($('#foodKey')&&$('#foodKey').value)||'';
+    const portion=($('#foodPortion')&&+$('#foodPortion').value)||1;
+    const result=estimateKcal({source:mode,key,portion});
+    S.ui.foodLookup={mode,key,portion,result};
+    save(); renderOverlayOnly();
+  },
+  useFoodEstimate(){
+    const r=(S.ui.foodLookup||{}).result;
+    if(!r||r.kcal==null) return toast('No food estimate to use yet.');
+    if(r.needsConfirmation) return toast('Confirm the food with a stronger match before logging.');
+    primeEatTimeSession(true);
+    S.ui.estFoodResult=r; S.ui.estTarget=null; S.ui.modal='estimate';
+    save(); render();
+  },
+  estClearFood(){ S.ui.estFoodResult=null; renderOverlayOnly(); },
   openEstimate(v){
     primeEatTimeSession(S.ui.modal!=='replace');
     S.ui.estTarget=v||null; S.ui.estDish=S.ui.estDish||DISHES[0].id;
-    S.ui.estPortion=S.ui.estPortion||'regular'; S.ui.modal='estimate'; render(); },
+    S.ui.estPortion=S.ui.estPortion||'regular'; S.ui.estFoodResult=null; S.ui.modal='estimate'; render(); },
   estDish(v){ S.ui.estDish=v; renderOverlayOnly(); },
   estPortion(v){ S.ui.estPortion=v; renderOverlayOnly(); },
   estClearPhoto(){ S.ui.estPhoto=null; renderOverlayOnly(); },
@@ -4655,7 +4807,7 @@ const ACT={
     const d=D(); if(!d) return toast('Start your day first.');
     const kcal=($('#estK')&&+$('#estK').value)||0;
     const prot=($('#estP')&&+$('#estP').value)||0;
-    const e=estimateDish(S.ui.estDish,S.ui.estPortion);
+    const e=foodEstimateShape(S.ui.estFoodResult)||estimateDish(S.ui.estDish,S.ui.estPortion);
     const label=e.name;
     const loggedAt=now();
     const {ateAt,timeConfirmed}=readAteTimeInput('#estEatTime',d,loggedAt);
@@ -4678,7 +4830,7 @@ const ACT={
       d.extra.items.push({name:label,kcal,p:prot,at:ateAt,ateAt,loggedAt,photo:S.ui.estPhoto||null});
       Points.award('LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} honestly`});
     }
-    S.ui.modal=null; S.ui.eatTime={}; S.ui.eatTimeFull=false; S.ui.estPhoto=null;
+    S.ui.modal=null; S.ui.eatTime={}; S.ui.eatTimeFull=false; S.ui.estPhoto=null; S.ui.estFoodResult=null;
     save(); render();
     const nx=nextRow();
     toast(`${label} logged — ${kcal} kcal, ${prot} g protein.${nx?` Next is ${nx.meal.name.toLowerCase()} at ${fmtTime(nx.at)}.`:''}`);
@@ -5114,6 +5266,7 @@ window.AlphaCoach={get S(){return S;},PLAN,CATALOG,MEAL_LIBRARY,JUGAAD,SURPRISE,
   Store,Points,RULES,REWARD_TARGET,commitMeal,editAteTime,classifyLog,isOpen,isLocked,homeState,
   eatenMacros,macrosFor,clampAte,autoResolveStale,checkStreakBreak,sessionKey,Notify,estimateMacros,
   DayRing,WeekBars,dayAxes,applyTheme,invOn,dayEndFor,sleepBound,estimateDish,DISHES,WeightTrend,
+  FOOD_DB,FoodDb,estimateKcal,foodLookupOn,
   resolveMeal,checkReplacements,applySwap,pickSurprise,surpriseStock,parseCommand,runOps,snapshotForAI,
   buildSchedule,stateOf,sched,nextRow,D,MEALS,mealItems,
   tx,setQty,undoLast,allTx,inv,invQty,ensureItem,servingText,fmtQty,toBase,fromBase,
