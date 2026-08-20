@@ -107,6 +107,49 @@ ok('next meal derives from the eating time', (() => {
   ok('net stays positive', r.pts > 0, String(r.pts));
 }
 
+/* --------------------------------------- auto-resolved meals void on re-log */
+{
+  const setupMissed = async () => {
+    A().ACT.wipe(); await wait(320);
+    A().S.onboarded = true; A().ACT.wake(); await wait(220);
+    const morning = new Date(); morning.setHours(7, 0, 0, 0);
+    const day = A().D();
+    day.logs = {}; day.prep = {}; day.reopened = {};
+    day.wake = morning.getTime();
+    day.key = new Date(morning).toISOString().slice(0, 10);
+    A().setOffset(morning.getTime() - Date.now()); await wait(80);
+    const first = A().sched().rows[0], second = A().sched().rows[1];
+    A().setOffset(Math.max(first.at + 4 * 60 * MIN + 5 * MIN, second.at + MIN) - Date.now());
+    await wait(80);
+    const resolvedNow = A().autoResolveStale();
+    ok('auto-resolve marks the stale meal missed', (resolvedNow || !!A().D().logs[first.meal.id]) && A().D().logs[first.meal.id].status === 'missed');
+    return first;
+  };
+  const penaltyClean = (ref, label) => {
+    const entries = A().S.points.ledger.filter(e => e.ref === ref);
+    ok(label + ': no never-logged award remains', entries.every(e => e.code !== 'MEAL_NEVER_LOGGED'));
+    ok(label + ': no never-logged reason remains', entries.every(e => !/never logged/i.test((e.reason || '') + ' ' + (e.label || ''))));
+    ok(label + ': exactly one meal-late penalty remains', entries.filter(e => e.code === 'MEAL_LATE').length === 1);
+  };
+
+  const missed = await setupMissed();
+  const other = A().Points.award('MEAL_NEVER_LOGGED', { reason: 'other meal was never logged', ref: 'other-meal' });
+  A().ACT.unmiss(missed.meal.id); await wait(160);
+  A().commitMeal({ mealId: missed.meal.id, ateAt: Date.now() + A().offset, loggedAt: Date.now() + A().offset });
+  penaltyClean(missed.meal.id, 'unmiss re-log');
+  ok('voidAward only removes the matching ref', A().S.points.ledger.some(e => e.id === other.id) && (A().S.ui.pointsFeed || []).some(e => e.id === other.id));
+
+  const estMissed = await setupMissed();
+  A().ACT.openEstimate(estMissed.meal.id); await wait(160);
+  click(act('saveEstimate', estMissed.meal.id)); await wait(220);
+  penaltyClean(estMissed.meal.id, 'estimator overwrite');
+
+  const repMissed = await setupMissed();
+  A().ACT.modal('replace', { dataset: { arg: repMissed.meal.id } }); await wait(160);
+  A().ACT.saveReplace(repMissed.meal.id); await wait(180);
+  penaltyClean(repMissed.meal.id, 'manual replacement overwrite');
+}
+
 /* ------------------------------------------------------------------- points */
 ok('positive and negative tracked separately', A().Points.positive() > 0 && A().Points.negative() < 0);
 ok('final score is their sum', A().Points.dayScore() === A().Points.positive() + A().Points.negative());

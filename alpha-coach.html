@@ -1520,6 +1520,16 @@ const Points={
     S.ui.pointsFeed.push(e);
     return e;
   },
+  voidAward(code, ref){
+    if(!code||!ref) return 0;
+    const match=e=>e&&e.code===code&&e.ref===ref;
+    const voided=(S.points.ledger||[]).filter(match);
+    if(!voided.length) return 0;
+    const ids=new Set(voided.map(e=>e.id));
+    S.points.ledger=(S.points.ledger||[]).filter(e=>!ids.has(e.id));
+    if(S.ui&&Array.isArray(S.ui.pointsFeed)) S.ui.pointsFeed=S.ui.pointsFeed.filter(e=>!ids.has(e.id));
+    return voided.length;
+  },
   dayEntries(k){ k=k||sessionKey(); return S.points.ledger.filter(e=>e.day===k); },
   positive(k){ return this.dayEntries(k).filter(e=>e.pts>0).reduce((a,e)=>a+e.pts,0); },
   negative(k){ return this.dayEntries(k).filter(e=>e.pts<0).reduce((a,e)=>a+e.pts,0); },
@@ -4392,6 +4402,7 @@ const ACT={
   unmiss(v){
     const d=D(); if(!d) return;
     const log=d.logs[v]; if(!log||log.status!=='missed') return;
+    Points.voidAward('MEAL_NEVER_LOGGED',v);
     delete d.logs[v];
     d.reopened=d.reopened||{}; d.reopened[v]=true;
     save(); render();
@@ -4477,6 +4488,8 @@ const ACT={
     const {ateAt,timeConfirmed}=readAteTimeInput('#estEatTime',d,loggedAt);
     if(v){
       const row=activeRows().find(r=>r.meal.id===v);
+      const previous=d.logs[v];
+      if(previous&&previous.status==='missed'&&previous.auto) Points.voidAward('MEAL_NEVER_LOGGED',v);
       let cls=null;
       if(row){
         const sequenceKept=!!(nextRow()&&nextRow().meal.id===row.meal.id);
@@ -4596,6 +4609,8 @@ const ACT={
     const d=D(); if(!d) return;
     const name=($('#repName')&&$('#repName').value.trim())||'something else';
     const row=activeRows().find(r=>r.meal.id===v);
+    const previous=d.logs[v];
+    if(previous&&previous.status==='missed'&&previous.auto) Points.voidAward('MEAL_NEVER_LOGGED',v);
     const kcal=($('#repKcal')&&+$('#repKcal').value)||(row?row.meal.kcal:0);
     const prot=($('#repP')&&+$('#repP').value)||(row?row.meal.p:0);
     const loggedAt=now();
