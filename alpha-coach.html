@@ -1210,12 +1210,29 @@ function servingText(it){
 }
 
 /* ===========================================================================
-   MEALS — plan meals with any rule-based swaps applied
+   MEALS — plan meals with deterministic variety and any rule-based swaps applied
    =========================================================================== */
+function varietyKey(){
+  const d=S&&S.activeDay&&S.days?S.days[S.activeDay]:null;
+  return d&&d.key?d.key:dayKey(now());
+}
+function varietyHash(s){
+  let h=2166136261;
+  for(const ch of String(s||'')){ h^=ch.charCodeAt(0); h=Math.imul(h,16777619); }
+  return h>>>0;
+}
+function slotVariants(m){
+  return [m,...(MEAL_LIBRARY[m.id]||[]).map(a=>Object.assign({},a,{id:m.id,slot:m.slot,gap:m.gap,variedFrom:m.name,altId:a.id}))];
+}
+function variedMeal(m,index){
+  const variants=slotVariants(m).filter(likedOk);
+  const pool=variants.length?variants:[m];
+  return pool[(varietyHash(varietyKey())+index*17)%pool.length];
+}
 function MEALS(){
-  return PLAN.meals.map(m=>{
+  return PLAN.meals.map((m,index)=>{
     const sw=S.swaps&&S.swaps[m.id];
-    if(!sw) return m;
+    if(!sw) return variedMeal(m,index);
     const alt=(MEAL_LIBRARY[m.id]||[]).find(a=>a.id===sw);
     return alt?Object.assign({},alt,{id:m.id,slot:m.slot,gap:m.gap,swappedFrom:m.name,altId:alt.id}):m;
   });
@@ -3186,6 +3203,7 @@ function MealRow(row,d){
           </div>
         </div>
         ${m.replacedFrom?`<p class="talk rowline">${ic('swap',12,1.8,'var(--accent)')} Replaced ${esc(m.replacedFrom.toLowerCase())} — <button class="linkbtn" data-act="modal" data-v="swapinfo" data-arg="${m.id}">why</button></p>`:''}
+        ${m.variedFrom&&!m.replacedFrom?`<p class="talk rowline">${ic('sparkleIcon',12,1.8,'var(--accent)')} Rotated from ${esc(m.variedFrom.toLowerCase())} for variety.</p>`:''}
         ${row.status==='done'?`
           <div class="timepair">
             <span>${ic('clock',12,1.8,'var(--faint)')} Ate <b>${fmtTime(ate)}</b></span>
@@ -4145,7 +4163,8 @@ function ScreenPrefs(){
         <div class="spread" style="padding:12px 0;border-top:1px solid var(--line);gap:10px;align-items:flex-start">
           <div style="min-width:0"><div class="meal-name" style="font-size:15px">${esc(m.name)}</div>
             <div class="meta" style="margin-top:2px">${esc(m.slot)} · ${m.kcal} kcal · ${m.p}g protein</div>
-            ${m.swappedFrom?`<div class="meta" style="margin-top:3px;color:var(--accent-ink)">Swapped from ${esc(m.swappedFrom)}</div>`:''}</div>
+            ${m.swappedFrom?`<div class="meta" style="margin-top:3px;color:var(--accent-ink)">Swapped from ${esc(m.swappedFrom)}</div>`:''}
+            ${m.variedFrom?`<div class="meta" style="margin-top:3px;color:var(--accent-ink)">Rotated from ${esc(m.variedFrom)}</div>`:''}</div>
           <button class="btn xs" data-act="modal" data-v="swap" data-arg="${m.id}">${ic('swap',13)} Replace</button>
         </div>`).join('')}
     </section>

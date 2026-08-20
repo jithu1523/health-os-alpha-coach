@@ -139,6 +139,43 @@ ok('first meal uses the plan interval, not a clock time', (() => {
   return g >= A().PLAN.first.min && g <= A().PLAN.first.ideal;
 })());
 ok('no phantom shortages with the kitchen off', A().shortages().length === 0);
+{
+  const originalKey = d().key;
+  const namesFor = key => {
+    d().key = key;
+    return A().MEALS().map(m => m.name).join('|');
+  };
+  const variants = new Set(['2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23'].map(namesFor));
+  ok('meal variety rotates the derived plan across day keys', variants.size > 1, [...variants].join(' / '));
+  const rotationKey = ['2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23']
+    .find(key => { d().key = key; return A().MEALS().some(m => m.variedFrom); });
+  ok('meal variety can surface a rotated meal', !!rotationKey);
+  if (rotationKey) {
+    d().key = rotationKey;
+    A().render(); await wait(80);
+    ok('meal variety is disclosed on the plan', /Rotated from/.test(txt()));
+  }
+  d().key = originalKey;
+  A().render(); await wait(80);
+
+  const oldRefuse = [...(A().S.prefs.refuse || [])];
+  A().S.prefs.refuse = ['chicken'];
+  ok('meal variety respects refused ingredients',
+    A().MEALS().every(m => !(m.ing || []).some(i => i.ref === 'chicken')),
+    A().MEALS().map(m => `${m.slot}:${m.name}`).join(', '));
+  A().S.prefs.refuse = oldRefuse;
+
+  const oldSwaps = {...(A().S.swaps || {})};
+  A().S.swaps = {...oldSwaps, m3: 'm3a'};
+  const swapped = A().MEALS().find(m => m.id === 'm3');
+  ok('manual meal swaps override automatic variety',
+    swapped && swapped.name === 'Rajma rice bowl' && swapped.swappedFrom === 'Grilled chicken rice bowl',
+    JSON.stringify(swapped));
+  A().S.swaps = oldSwaps;
+
+  ok('meal variety keeps the five plan slots stable',
+    A().MEALS().map(m => m.id).join(',') === 'm1,m2,m3,m4,m5');
+}
 
 {
   A().S.prefs.foodLookup = true;
