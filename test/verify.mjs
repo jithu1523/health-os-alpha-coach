@@ -212,6 +212,19 @@ A().ACT.wake(); await wait(220);
   click(act('saveEstimate', nx.meal.id)); await wait(220);
   ok('it logs against the meal', d().logs[nx.meal.id].status === 'replaced');
   ok('and its calories count toward the day', A().eatenMacros().kcal > before);
+  const truthfulNonWindow = entries => entries.some(e => e.code === 'MEAL_LOGGED_HONESTLY') &&
+    entries.every(e => !/inside the window/i.test((e.label || '') + ' ' + (e.reason || '')));
+  ok('estimator replacement uses truthful non-window points copy', truthfulNonWindow(A().S.points.ledger.filter(e => e.ref === nx.meal.id)));
+
+  const extraStart = A().S.points.ledger.length;
+  A().ACT.openEstimate(); await wait(120);
+  click(act('saveEstimate')); await wait(180);
+  ok('extra estimator uses truthful non-window points copy', truthfulNonWindow(A().S.points.ledger.slice(extraStart)));
+
+  const manual = A().nextRow();
+  const manualStart = A().S.points.ledger.length;
+  A().ACT.saveReplace(manual.meal.id); await wait(160);
+  ok('manual replacement uses truthful non-window points copy', truthfulNonWindow(A().S.points.ledger.slice(manualStart)));
 }
 ok('the vision seam exists', typeof A().AlphaAPI.recogniseMeal === 'function');
 ok('and returns nothing without a backend', (await A().AlphaAPI.recogniseMeal('data:image/png;base64,x')) === null);

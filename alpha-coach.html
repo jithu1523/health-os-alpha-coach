@@ -1453,6 +1453,7 @@ const LOG_GRACE=30*MIN;      // logged within this of eating = logged on time
 const RULES={
   MEAL_ON_TIME:      {pts:+10, label:'Meal eaten on time'},
   MEAL_LOGGED_ON_TIME:{pts:+8, label:'Logged inside the window'},
+  MEAL_LOGGED_HONESTLY:{pts:+8, label:'Logged honestly'},
   TIME_CONFIRMED:    {pts:+5,  label:'Actual eating time confirmed'},
   SEQUENCE_KEPT:     {pts:+3,  label:'Meal taken in sequence'},
   SUPP_ON_TIME:      {pts:+5,  label:'Supplement logged'},
@@ -4467,13 +4468,13 @@ const ACT={
       const at=now();
       d.logs[v]={status:'replaced',at,ateAt:at,loggedAt:at,planned:row?row.at:at,note:label,kcal,
                  macros:{kcal,p:prot,c:e.c,f:e.f,ratio:1},photo:S.ui.estPhoto||null};
-      Points.award('MEAL_LOGGED_ON_TIME',{reason:`Logged ${label.toLowerCase()} instead of ${row?row.meal.name.toLowerCase():'the planned meal'}`,ref:v});
+      Points.award('MEAL_LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} instead of ${row?row.meal.name.toLowerCase():'the planned meal'}`,ref:v});
       if(dayDone()) closeOutDay(d);
     }else{
       d.extra=d.extra||{kcal:0,p:0,items:[]};
       d.extra.kcal+=kcal; d.extra.p+=prot;
       d.extra.items.push({name:label,kcal,p:prot,at:now(),photo:S.ui.estPhoto||null});
-      Points.award('MEAL_LOGGED_ON_TIME',{reason:`Logged ${label.toLowerCase()} honestly`});
+      Points.award('MEAL_LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} honestly`});
     }
     S.ui.modal=null; S.ui.estPhoto=null;
     save(); render();
@@ -4584,7 +4585,7 @@ const ACT={
     const at=now();
     d.logs[v]={status:'replaced',at,ateAt:at,loggedAt:at,planned:row?row.at:at,note:name,kcal,
                macros:{kcal,p:prot,c:0,f:0,ratio:1}};
-    Points.award('MEAL_LOGGED_ON_TIME',{reason:`Told me about ${esc(name)} instead of guessing`,ref:v});
+    Points.award('MEAL_LOGGED_HONESTLY',{reason:`Told me about ${esc(name)} instead of guessing`,ref:v});
     S.ui.modal=null;
     if(dayDone()) archive(d);
     save(); render();
