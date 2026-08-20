@@ -60,6 +60,36 @@ ok('no phantom shortages with the kitchen off', A().shortages().length === 0);
 ok('only the first meal is open', A().isOpen(A().sched().rows[0]) && A().isLocked(A().sched().rows[1]));
 ok('logging out of sequence is refused', A().commitMeal({ mealId: A().sched().rows[2].meal.id, ateAt: Date.now() }).ok === false);
 
+{
+  const startCleanMorning = async () => {
+    A().ACT.wipe(); await wait(320);
+    A().S.onboarded = true; A().ACT.wake(); await wait(220);
+    const morning = new Date(); morning.setHours(7, 0, 0, 0);
+    const day = A().D();
+    day.logs = {}; day.prep = {}; day.reopened = {};
+    day.wake = morning.getTime();
+    day.key = new Date(morning).toISOString().slice(0, 10);
+    A().setOffset(morning.getTime() - Date.now()); await wait(80);
+    return morning;
+  };
+  await startCleanMorning();
+  A().setOffset(A().D().wake + 150 * MIN - Date.now()); await wait(120);
+  const row = A().nextRow();
+  const start = A().S.points.ledger.length;
+  click(act('ate', row.meal.id)); await wait(150);
+  ok('first eat-time use shows the full explanation', /Your meal schedule uses when you ate, not when you typed it in/.test(txt()));
+  ok('meal-time chip renders the actual planned time', txt().includes(displayTime(row.at)));
+  click(act('confirmEat', row.meal.id)); await wait(950);
+  const entries = A().S.points.ledger.slice(start);
+  ok('zero-tap meal log uses loggedAt as ateAt', d().logs[row.meal.id].ateAt === d().logs[row.meal.id].loggedAt,
+    `${d().logs[row.meal.id].ateAt} / ${d().logs[row.meal.id].loggedAt}`);
+  ok('zero-tap meal log does not confirm a different time', entries.every(e => e.code !== 'TIME_CONFIRMED'));
+  click(act('ate', A().nextRow().meal.id)); await wait(150);
+  ok('repeat eat-time use shows the short explanation', /Set the time you ate\. The rest of today uses that time\./.test(txt()));
+  A().ACT.close(); await wait(80);
+  await startCleanMorning();
+}
+
 /* --------------------------------------------- ate time drives the schedule */
 A().setOffset(d().wake + 150 * MIN - Date.now()); await wait(120);
 click(act('ate', 'm1')); await wait(150);
@@ -265,6 +295,7 @@ A().ACT.wake(); await wait(220);
   ok('the estimator opens', /What did you eat/.test(txt()));
   ok('the estimator asks when you actually ate', !!doc.querySelector('#estEatTime'));
   ok('the estimator shows compact eat-time chips', doc.querySelectorAll('[data-eat-time-control="estEatTime"] [data-act="eatTimeQuick"]').length === 4);
+  ok('estimator meal-time chip label is the planned time', doc.querySelector('[data-act="eatTimeQuick"][data-v="estEatTime"][data-kind="meal"]').textContent.trim() === displayTime(nx.at));
   click('[data-act="eatTimeQuick"][data-v="estEatTime"][data-kind="meal"]'); await wait(120);
   ok('estimator meal-time chip sets a stated ateAt', doc.querySelector('#estEatTime').value === timeText(nx.at), doc.querySelector('#estEatTime').value);
   A().ACT.modal('replace', { dataset: { arg: nx.meal.id } }); await wait(120);

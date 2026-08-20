@@ -641,7 +641,7 @@ function eatTimeBag(){
 }
 function eatTimeClaim(id='eatTime'){
   const bag=eatTimeBag();
-  return bag[id]||bag.last||{value:timeInputValue(now()),source:'now'};
+  return bag[id]||bag.last||{value:timeInputValue(now()),source:'now',touched:false};
 }
 function eatTimeAt(id='eatTime', loggedAt=now()){
   const value=(eatTimeClaim(id).value)||timeInputValue(loggedAt);
@@ -656,7 +656,7 @@ function eatTimeLabel(id='eatTime'){
 }
 function rememberEatTime(id,value,source){
   const bag=eatTimeBag();
-  const claim={value,source:source||'exact'};
+  const claim={value,source:source||'exact',touched:true};
   bag[id]=claim; bag.last=claim;
   return claim;
 }
@@ -664,24 +664,33 @@ function mealTimeForControl(mealId){
   const row=mealId&&D()?activeRows().find(r=>r.meal.id===mealId):null;
   return row?row.at:null;
 }
+function primeEatTimeSession(reset=true){
+  if(reset) S.ui.eatTime={};
+  S.ui.eatTimeFull=!S.ui.eatTimeSeen;
+  if(!S.ui.eatTimeSeen){ S.ui.eatTimeSeen=true; save(); }
+}
 function eatTimeControl(id='eatTime',mealId=null){
   const claim=eatTimeClaim(id), mealAt=mealTimeForControl(mealId);
+  const mealChip=mealAt?fmtTime(mealAt):'Meal time';
+  const note=S.ui.eatTimeFull
+    ? `Logging now at ${fmtTime(now())}. If you ate earlier, set the real time. Your meal schedule uses when you ate, not when you typed it in, so an on-time meal still gets its credit.`
+    : `Set the time you ate. The rest of today uses that time.`;
   const chip=(kind,label,pressed,extra='')=>`<button class="chip" type="button" data-act="eatTimeQuick" data-v="${id}" data-kind="${kind}" data-meal="${mealId||''}" aria-pressed="${pressed}"${extra}>${label}</button>`;
   return `<div class="eat-time eat-time--compact" data-eat-time-control="${id}">
     <div class="eat-time-main">
       <span class="label">Ate at</span>
       <button class="eat-time-value" type="button" data-act="eatTimeExact" data-v="${id}">${eatTimeLabel(id)}</button>
-      <span class="tag mute">${claim.source==='now'?'now':claim.source==='meal'?'meal time':claim.source==='30'?'30m ago':claim.source==='60'?'1h ago':'exact'}</span>
-      <input class="input eat-time-native" id="${id}" data-eat-time="${id}" type="time" value="${claim.value}" aria-label="Exact eating time">
+      <span class="tag mute">${claim.source==='now'?'now':claim.source==='meal'?'planned':claim.source==='30'?'30m ago':claim.source==='60'?'1h ago':'exact'}</span>
+      <input class="input eat-time-native" id="${id}" data-eat-time="${id}" data-default-time="${claim.value}" type="time" value="${claim.value}" aria-label="Exact eating time">
     </div>
     <div class="eat-time-chips">
       ${chip('now','Now',claim.source==='now')}
       ${chip('30','30m ago',claim.source==='30')}
       ${chip('60','1h ago',claim.source==='60')}
-      ${chip('meal','Meal time',claim.source==='meal',mealAt?'':' disabled aria-disabled="true"')}
+      ${chip('meal',mealChip,claim.source==='meal',mealAt?'':' disabled aria-disabled="true"')}
       <button class="iconbtn" type="button" data-act="eatTimeExact" data-v="${id}" aria-label="Pick exact eating time">${ic('clock',16)}</button>
     </div>
-    <p class="eat-time-note">Change it if you ate earlier. Schedule credit uses this time.</p>
+    <p class="eat-time-note">${note}</p>
   </div>`;
 }
 function readAteTimeInput(id,d,loggedAt=now()){
@@ -689,7 +698,8 @@ function readAteTimeInput(id,d,loggedAt=now()){
   let ateAt=loggedAt, timeConfirmed=false;
   const key=String(id).replace(/^#/,'');
   const stored=S.ui&&S.ui.eatTime&&S.ui.eatTime[key];
-  const value=(tf&&tf.value)||(stored&&stored.value);
+  const untouchedDefault=!stored&&tf&&tf.value&&tf.value===tf.dataset.defaultTime;
+  const value=untouchedDefault?null:((tf&&tf.value)||(stored&&stored.value));
   if(value){
     const [h,mi]=value.split(':').map(Number);
     const dt=new Date(loggedAt); dt.setHours(h,mi,0,0);
@@ -1342,7 +1352,8 @@ function defaultState(){
     points:blankPoints(), dislikedMeals:[], weights:[], sleepLog:[], notify:false, theme:'grove',
     shop:{}, swaps:{}, jugaad:null,
     workout:null, chat:[],
-    ui:{screen:'today', modal:null, modalArg:null, celebrate:null, online:true, invTab:'need', shopTab:'urgent'}
+    ui:{screen:'today', modal:null, modalArg:null, celebrate:null, online:true, invTab:'need', shopTab:'urgent',
+        eatTimeSeen:false, eatTimeFull:false}
   };
 }
 let S=Persist.read()||defaultState();
@@ -4372,10 +4383,10 @@ function shortageLine(s){
 const ACT={
   go(v){ if(S.ui.screen===v) return; S.ui.screen=v; S.ui.modal=null; save(); render(); const m=$('.main'); if(m) m.scrollTop=0; },
   modal(v,n){
-    if(v==='replace'&&S.ui.modal!=='estimate') S.ui.eatTime={};
+    if(v==='replace') primeEatTimeSession(S.ui.modal!=='estimate');
     S.ui.modal=v; S.ui.modalArg=n?n.dataset.arg:null; S.ui.reason=null; render();
   },
-  close(){ S.ui.modal=null; S.ui.modalArg=null; S.ui.eatTime={}; render(); },
+  close(){ S.ui.modal=null; S.ui.modalArg=null; S.ui.eatTime={}; S.ui.eatTimeFull=false; render(); },
   scrim(v,n,e){ if(e.target===n) ACT.close(); },
 
   wake(){
@@ -4410,7 +4421,7 @@ const ACT={
     f.focus();
     try{ if(f.showPicker) f.showPicker(); }catch(e){}
   },
-  ate(v){ S.ui.eatSkip={}; S.ui.eatAmt={}; S.ui.eatTime={}; S.ui.modal='eat'; S.ui.modalArg=v; render(); },
+  ate(v){ S.ui.eatSkip={}; S.ui.eatAmt={}; primeEatTimeSession(true); S.ui.modal='eat'; S.ui.modalArg=v; render(); },
   togEat(v){ S.ui.eatSkip=S.ui.eatSkip||{}; S.ui.eatSkip[v]=!S.ui.eatSkip[v]; renderOverlayOnly(); },
 
   async confirmEat(v,n){
@@ -4432,7 +4443,7 @@ const ACT={
     const loggedAt=now();
     // the actual eating time the user confirmed, which may not be now
     const {ateAt,timeConfirmed}=readAteTimeInput('#eatTime',d,loggedAt);
-    S.ui.modal=null; S.ui.eatTime={}; S.ui.celebrate=v; render();
+    S.ui.modal=null; S.ui.eatTime={}; S.ui.eatTimeFull=false; S.ui.celebrate=v; render();
     await AlphaAPI.logMeal({mealId:v,ateAt,loggedAt,plannedAt:row.at,consumed:use});
     setTimeout(()=>{
       if(d.logs[v]){ busy.delete(v); return; }
@@ -4478,7 +4489,7 @@ const ACT={
     delete d.logs[v];
     d.reopened=d.reopened||{}; d.reopened[v]=true;
     save(); render();
-    S.ui.modal='eat'; S.ui.modalArg=v; S.ui.eatSkip={}; S.ui.eatAmt={}; S.ui.eatTime={};
+    primeEatTimeSession(true); S.ui.modal='eat'; S.ui.modalArg=v; S.ui.eatSkip={}; S.ui.eatAmt={};
     render();
     toast('Reopened — set the time you actually ate it.');
   },
@@ -4546,7 +4557,7 @@ const ACT={
 
   /* ---------- eating out ---------- */
   openEstimate(v){
-    if(S.ui.modal!=='replace') S.ui.eatTime={};
+    primeEatTimeSession(S.ui.modal!=='replace');
     S.ui.estTarget=v||null; S.ui.estDish=S.ui.estDish||DISHES[0].id;
     S.ui.estPortion=S.ui.estPortion||'regular'; S.ui.modal='estimate'; render(); },
   estDish(v){ S.ui.estDish=v; renderOverlayOnly(); },
@@ -4579,7 +4590,7 @@ const ACT={
       d.extra.items.push({name:label,kcal,p:prot,at:ateAt,ateAt,loggedAt,photo:S.ui.estPhoto||null});
       Points.award('LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} honestly`});
     }
-    S.ui.modal=null; S.ui.eatTime={}; S.ui.estPhoto=null;
+    S.ui.modal=null; S.ui.eatTime={}; S.ui.eatTimeFull=false; S.ui.estPhoto=null;
     save(); render();
     const nx=nextRow();
     toast(`${label} logged — ${kcal} kcal, ${prot} g protein.${nx?` Next is ${nx.meal.name.toLowerCase()} at ${fmtTime(nx.at)}.`:''}`);
@@ -4697,7 +4708,7 @@ const ACT={
     d.logs[v]={status:'replaced',at:ateAt,ateAt,loggedAt,planned:row?row.at:ateAt,note:name,kcal,
                macros:{kcal,p:prot,c:0,f:0,ratio:1},cls};
     Points.award('LOGGED_HONESTLY',{reason:`Told me about ${esc(name)} instead of guessing`,ref:v});
-    S.ui.modal=null; S.ui.eatTime={};
+    S.ui.modal=null; S.ui.eatTime={}; S.ui.eatTimeFull=false;
     if(dayDone()) archive(d);
     save(); render();
     toast(explainShift(row,ateAt));
