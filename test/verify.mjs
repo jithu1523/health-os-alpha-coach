@@ -247,6 +247,12 @@ ok('logging out of sequence is refused', A().commitMeal({ mealId: A().sched().ro
 A().setOffset(d().wake + 150 * MIN - Date.now()); await wait(120);
 click(act('ate', 'm1')); await wait(150);
 ok('the confirm window asks when you actually ate', !!doc.querySelector('#eatTime'));
+{
+  const dialog = doc.querySelector('#overlay .modal[role="dialog"][aria-modal="true"]');
+  ok('meal dialog is labelled and receives focus',
+    !!dialog && !!dialog.getAttribute('aria-label') && dialog.contains(doc.activeElement),
+    dialog ? `${dialog.getAttribute('aria-label')} / ${doc.activeElement && doc.activeElement.tagName}` : 'no dialog');
+}
 ok('main confirmation shows compact eat-time chips', doc.querySelectorAll('[data-eat-time-control="eatTime"] [data-act="eatTimeQuick"]').length === 4);
 {
   const claimAt = Date.now() + A().offset - 30 * MIN;
@@ -671,6 +677,23 @@ for (const sc of ['today', 'prep', 'inventory', 'shop', 'points', 'jugaad', 'sta
   click(act('go', sc)); await wait(60);
   ok('renders: ' + sc, A().S.ui.screen === sc && doc.querySelector('#screen').children.length > 0);
 }
+ok('app shell exposes skip link and labelled landmarks',
+  !!doc.querySelector('.skip-link[href="#main"]') &&
+  !!doc.querySelector('main#main[aria-labelledby="screenTitle"]') &&
+  !!doc.querySelector('.rail[aria-label="Primary navigation"]') &&
+  !!doc.querySelector('.tabbar[aria-label="Primary mobile navigation"]'));
+ok('primary navigation buttons have accessible names',
+  [...doc.querySelectorAll('.nav-item[data-act="go"], .tab[data-act="go"]')].every(b => b.getAttribute('aria-label')));
+ok('toast region announces updates politely',
+  !!doc.querySelector('#toasts[role="status"][aria-live="polite"]'));
+click(act('go', 'today')); await wait(80);
+ok('day progress ring exposes status by axis',
+  /Meals \d+ percent/.test(doc.querySelector('.dayring svg')?.getAttribute('aria-label') || ''));
+ok('mascot exposes progress state',
+  /fuel \d+ percent, protein \d+ percent, meals \d+ percent/.test(doc.querySelector('.mascot')?.getAttribute('aria-label') || ''));
+click(act('go', 'points')); await wait(80);
+ok('weekly score chart exposes a score summary',
+  /^Recent discipline scores: /.test(doc.querySelector('.weekbars')?.getAttribute('aria-label') || ''));
 ok('no crash screen', !/Something went wrong loading/.test(txt()));
 ok('no console errors', errs.length === 0, errs.slice(0, 2).join(' | '));
 

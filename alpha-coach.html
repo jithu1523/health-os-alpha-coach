@@ -117,6 +117,13 @@ code{font-family:ui-monospace,SFMono-Regular,monospace;font-size:.86em;backgroun
 ::-webkit-scrollbar{width:9px;height:9px}
 ::-webkit-scrollbar-thumb{background:rgba(23,20,15,.14);border-radius:99px;border:3px solid transparent;background-clip:content-box}
 ::-webkit-scrollbar-track{background:transparent}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip-link{
+  position:fixed;left:16px;top:12px;z-index:1000;transform:translateY(-160%);
+  padding:10px 14px;border-radius:var(--r-sm);background:var(--ink);color:#fff;
+  font-weight:700;box-shadow:var(--shadow);transition:transform var(--d-1) var(--ease);
+}
+.skip-link:focus{transform:none;outline:3px solid var(--lime);outline-offset:3px}
 
 /* type roles ------------------------------------------------ */
 .display{font-family:var(--f-display)}
@@ -646,6 +653,7 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 </style>
 </head>
 <body>
+<a class="skip-link" href="#main">Skip to main content</a>
 <div id="app"></div>
 <div id="overlay"></div>
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
@@ -817,7 +825,10 @@ function Mascot(o={}){
   const {w=200, reaction='idle', arcs=3, breathing=true, ground=true}=o;
   const p=Array.isArray(o.progress)?o.progress:mascotProgress(arcs);
   const live=breathing?'live':'';
-  return `<svg class="mascot m-${reaction}" width="${w}" viewBox="0 0 300 380" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Your wellness companion">
+  const parts=['fuel','protein','meals'].map((k,i)=>`${k} ${Math.round(clamp(p[i]||0,0,1)*100)} percent`).join(', ');
+  const label=`Coach mascot, ${reaction} state, ${parts}`;
+  return `<svg class="mascot m-${reaction}" width="${w}" viewBox="0 0 300 380" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(label)}">
+  <title>${esc(label)}</title>
   <g class="m-arc m-arc--fuel ${live}" style="--arc-p:${clamp(p[0]||0,0,1)}">
     <path class="arc-bg" pathLength="1" d="M38 136A124 124 0 0 1 262 136"/>
     <path class="arc-fg" pathLength="1" d="M38 136A124 124 0 0 1 262 136"/>
@@ -2818,33 +2829,34 @@ function Rail(){
   const overdue=D()?activeRows().filter(r=>stateOf(r)==='overdue').length:0;
   const due=D()?activeRows().filter(r=>stateOf(r)==='due').length:0;
   const shorts=shortages().length, buys=shoppingList().all.length;
-  return `<aside class="rail">
+  return `<nav class="rail" aria-label="Primary navigation">
     <div class="brand">${MascotMark(30)}
       <div><div class="brand-name">Alpha Coach</div><div class="brand-sub">${esc(PLAN.title)}</div></div></div>
     ${NAV.map(n=>{
       const on=S.ui.screen===n.k;
-      let pill='';
-      if(n.k==='today'&&overdue) pill=`<span class="nav-pill warn">${overdue}</span>`;
-      else if(n.k==='today'&&due) pill=`<span class="nav-pill">${due}</span>`;
-      else if(n.k==='inventory'&&shorts) pill=`<span class="nav-pill warn">${shorts}</span>`;
-      else if(n.k==='shop'&&buys) pill=`<span class="nav-pill">${buys}</span>`;
-      return `<button class="nav-item" data-act="go" data-v="${n.k}" ${on?'aria-current="page"':''}>${ic(n.icon,19)}<span>${n.label}</span>${pill}</button>`;
+      let pill='', note='';
+      if(n.k==='today'&&overdue){ pill=`<span class="nav-pill warn" aria-hidden="true">${overdue}</span>`; note=`${overdue} overdue`; }
+      else if(n.k==='today'&&due){ pill=`<span class="nav-pill" aria-hidden="true">${due}</span>`; note=`${due} due`; }
+      else if(n.k==='inventory'&&shorts){ pill=`<span class="nav-pill warn" aria-hidden="true">${shorts}</span>`; note=`${shorts} shortage${shorts>1?'s':''}`; }
+      else if(n.k==='shop'&&buys){ pill=`<span class="nav-pill" aria-hidden="true">${buys}</span>`; note=`${buys} shopping item${buys>1?'s':''}`; }
+      const label=note?`${n.label}, ${note}`:n.label;
+      return `<button class="nav-item" data-act="go" data-v="${n.k}" aria-label="${esc(label)}" ${on?'aria-current="page"':''}>${ic(n.icon,19)}<span>${n.label}</span>${pill}</button>`;
     }).join('')}
     <div class="rail-foot">
-      <button class="nav-item" data-act="go" data-v="prefs" ${S.ui.screen==='prefs'?'aria-current="page"':''}>${ic('user',19)}<span>Preferences</span></button>
-      <button class="nav-item" data-act="go" data-v="settings" ${S.ui.screen==='settings'?'aria-current="page"':''}>${ic('gear',19)}<span>Settings</span></button>
+      <button class="nav-item" data-act="go" data-v="prefs" aria-label="Preferences" ${S.ui.screen==='prefs'?'aria-current="page"':''}>${ic('user',19)}<span>Preferences</span></button>
+      <button class="nav-item" data-act="go" data-v="settings" aria-label="Settings" ${S.ui.screen==='settings'?'aria-current="page"':''}>${ic('gear',19)}<span>Settings</span></button>
     </div>
-  </aside>`;
+  </nav>`;
 }
 function TabBar(){
-  return `<nav class="tabbar">${TABS.map(k=>{
+  return `<nav class="tabbar" aria-label="Primary mobile navigation">${TABS.map(k=>{
     const n=NAV.find(x=>x.k===k)||{k,label:'Settings',icon:'gear'};
-    return `<button class="tab" data-act="go" data-v="${k}" ${S.ui.screen===k?'aria-current="page"':''}>${ic(n.icon,20)}<span>${n.label}</span></button>`;
+    return `<button class="tab" data-act="go" data-v="${k}" aria-label="${esc(n.label)}" ${S.ui.screen===k?'aria-current="page"':''}>${ic(n.icon,20)}<span>${n.label}</span></button>`;
   }).join('')}</nav>`;
 }
 function Head(title,sub,right=''){
   return `<header class="spread" style="margin-bottom:20px;align-items:flex-start">
-    <div><h1 style="font-size:26px">${title}</h1><p class="meta" style="margin-top:5px">${sub}</p></div>
+    <div><h1 id="screenTitle" style="font-size:26px">${title}</h1><p class="meta" style="margin-top:5px">${sub}</p></div>
     <div class="row" style="gap:8px">${right}</div></header>`;
 }
 function Say(text,reaction='idle',size=52){
@@ -2950,6 +2962,7 @@ function dayAxes(){
 function DayRing(size=176){
   const axes=dayAxes();
   const overall=Math.round(axes.reduce((a,x)=>a+x.v,0)/axes.length*100);
+  const label=`Day completion ${overall} percent: ${axes.map(a=>`${a.k} ${Math.round(a.v*100)} percent`).join(', ')}`;
   const cx=size/2, cy=size/2;
   const radii=[size/2-9, size/2-25, size/2-41, size/2-57];
   const arcs=axes.map((a,i)=>{
@@ -2960,7 +2973,8 @@ function DayRing(size=176){
         transform="rotate(-90 ${cx} ${cy})" style="transition:stroke-dashoffset 900ms var(--ease-out)"/>`;
   }).join('');
   return `<div class="dayring">
-    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="Day completion ${overall} percent">
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="${esc(label)}">
+      <title>${esc(label)}</title>
       ${arcs}
       <text x="${cx}" y="${cy+2}" text-anchor="middle" dominant-baseline="middle"
         style="font-family:var(--f-display);font-weight:800;font-size:26px;letter-spacing:-.05em;fill:var(--ink)">${overall}%</text>
@@ -2983,7 +2997,11 @@ function WeekBars(){
   const max=Math.max(40,...vals.map(x=>Math.abs(x.v)));
   const pad=Array.from({length:Math.max(0,7-vals.length)},()=>null);
   const all=[...pad,...vals];
-  return `<div class="weekbars">
+  const label=`Recent discipline scores: ${vals.map(x=>{
+    const day=new Date(x.k+'T12:00:00').toLocaleDateString([], {weekday:'long'});
+    return `${day} ${x.v>0?'+':''}${x.v}`;
+  }).join(', ')}`;
+  return `<div class="weekbars" role="img" aria-label="${esc(label)}">
     ${all.map(x=>{
       if(!x) return `<div class="wb empty"><div class="wb-col" style="height:14%"></div><span class="wb-d">–</span></div>`;
       const h=clamp(Math.abs(x.v)/max*100,6,100);
@@ -4174,6 +4192,10 @@ function ScreenPrefs(){
 /* ===========================================================================
    MODALS
    =========================================================================== */
+function dialogLabel(html){
+  const h=String(html||'').match(/<h2[^>]*>([\s\S]*?)<\/h2>/i);
+  return (h?h[1]:'Dialog').replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim()||'Dialog';
+}
 function Overlay(){
   const m=S.ui.modal; if(!m) return '';
   const arg=S.ui.modalArg;
@@ -4639,7 +4661,8 @@ function Overlay(){
   }[m];
   if(!body) return '';
   const wide=m==='reward'?'modal wide reward-modal':m==='swapinfo'?'modal':'modal';
-  return `<div class="scrim" data-act="scrim" role="dialog" aria-modal="true"><div class="${wide}">${body()}</div></div>`;
+  const content=body(), label=dialogLabel(content);
+  return `<div class="scrim" data-act="scrim"><div class="${wide}" role="dialog" aria-modal="true" aria-label="${esc(label)}">${content}</div></div>`;
 }
 
 /* ===========================================================================
@@ -4650,7 +4673,7 @@ const SCREENS={today:ScreenToday,prep:ScreenPrep,inventory:ScreenInventory,shop:
   prefs:ScreenPrefs,stack:ScreenStack,train:ScreenTrain,progress:ScreenProgress,coach:ScreenCoach,settings:ScreenSettings};
 let mounted=false;
 function mount(){
-  $('#app').innerHTML=`${Rail()}<main class="main"><div class="wrap" id="screen"></div></main>${TabBar()}`;
+  $('#app').innerHTML=`${Rail()}<main class="main" id="main" tabindex="-1" aria-labelledby="screenTitle"><div class="wrap" id="screen"></div></main>${TabBar()}`;
   mounted=true;
 }
 function snapFocus(){
@@ -4759,6 +4782,7 @@ document.addEventListener('keydown',e=>{
 function renderOverlayOnly(){
   const f=snapFocus();
   $('#overlay').innerHTML=Overlay();
+  if(S.ui.modal) trapFocus();
   restoreFocus(f);
 }
 function shortageLine(s){
@@ -4768,7 +4792,11 @@ function shortageLine(s){
   return base+fix+sub;
 }
 const ACT={
-  go(v){ if(S.ui.screen===v) return; S.ui.screen=v; S.ui.modal=null; save(); render(); const m=$('.main'); if(m) m.scrollTop=0; },
+  go(v){
+    if(S.ui.screen===v) return;
+    S.ui.screen=v; S.ui.modal=null; save(); render();
+    const m=$('#main'); if(m){ m.scrollTop=0; setTimeout(()=>{ try{ m.focus({preventScroll:true}); }catch(e){ try{ m.focus(); }catch(_){} } },0); }
+  },
   modal(v,n){
     if(v==='replace') primeEatTimeSession(S.ui.modal!=='estimate');
     S.ui.modal=v; S.ui.modalArg=n?n.dataset.arg:null; S.ui.reason=null; render();
