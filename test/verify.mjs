@@ -301,6 +301,10 @@ ok('and returns nothing without a backend', (await A().AlphaAPI.recogniseMeal('d
   ok('flexible mode: it stores ateAt and loggedAt like any other log',
     !!A().D().logs[third] && !!A().D().logs[third].ateAt && !!A().D().logs[third].loggedAt);
   ok('flexible mode: punctuality is still scored on that log', !!A().D().logs[third].cls);
+  ok('flexible mode: out-of-order log earns no sequence credit or order claim', (() => {
+    const claims = A().S.points.ledger.filter(e => e.ref === third && (e.code === 'SEQUENCE_KEPT' || /taken in order/i.test(e.reason || '')));
+    return claims.length === 0;
+  })());
 
   /* ateAt anchoring and compression behave exactly as now. */
   ok('flexible mode: the schedule still holds all five meals', rows().length === 5);
@@ -313,6 +317,17 @@ ok('and returns nothing without a backend', (await A().AlphaAPI.recogniseMeal('d
       if (gap < rule.min - 1 || gap > rule.ideal + 1) return false;
     }
     return true;
+  })());
+
+  /* Flexible users still earn sequence credit when they actually keep sequence. */
+  day.logs = {}; day.prep = {}; day.reopened = {};
+  A().S.points.ledger = [];
+  A().setOffset(morning.getTime() - Date.now()); await wait(80);
+  const first = rows()[0].meal.id;
+  const inOrder = A().commitMeal({ mealId: first, ateAt: Date.now() + A().offset });
+  ok('flexible mode: in-order log still earns sequence credit', (() => {
+    const claims = A().S.points.ledger.filter(e => e.ref === first && e.code === 'SEQUENCE_KEPT' && /taken in order/i.test(e.reason || ''));
+    return inOrder.ok === true && claims.length === 1;
   })());
 
   /* Turning it back off restores the gate. */

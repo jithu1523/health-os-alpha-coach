@@ -1532,7 +1532,7 @@ function scoreMealLog(row, ateAt, loggedAt, opts={}){
   if(c.logOnTime) out.push(Points.award('MEAL_LOGGED_ON_TIME',{reason:`Logged ${c.logDelta<2*MIN?'straight away':dur(c.logDelta)+' after eating'}`,ref:row.meal.id}));
   else out.push(Points.award('LOG_LATE',{units:c.lateUnits,reason:`Entered ${dur(c.logDelta)} after you ate`,ref:row.meal.id}));
   if(opts.timeConfirmed) out.push(Points.award('TIME_CONFIRMED',{reason:`You set the real eating time to ${fmtTime(ateAt)}`,ref:row.meal.id}));
-  out.push(Points.award('SEQUENCE_KEPT',{reason:`${nm} taken in order`,ref:row.meal.id}));
+  if(opts.sequenceKept) out.push(Points.award('SEQUENCE_KEPT',{reason:`${nm} taken in order`,ref:row.meal.id}));
   return {entries:out.filter(Boolean), cls:c};
 }
 /* shared by the workout checkboxes and the chat — scoring stays here */
@@ -1761,12 +1761,13 @@ function commitMeal({mealId, ateAt, loggedAt, use, timeConfirmed}){
   if(!row) return {ok:false,msg:'I could not find that meal on today\'s plan.'};
   if(row.status!=='pending') return {ok:false,msg:'That meal is already resolved.'};
   if(!isOpen(row)) return {ok:false,msg:`${row.meal.name} is locked until the meal before it is resolved.`};
+  const sequenceKept=!!(nextRow()&&nextRow().meal.id===row.meal.id);
   loggedAt=loggedAt||now();
   const asked=ateAt||loggedAt;
   ateAt=clampAte(asked,d);
   const clamped=Math.abs(asked-ateAt)>MIN;
   const consumed=use||(invOn()?mealItems(row.meal).map(i=>({ref:i.ref,amt:i.amt})):[]);
-  const {entries,cls}=scoreMealLog(row,ateAt,loggedAt,{timeConfirmed});
+  const {entries,cls}=scoreMealLog(row,ateAt,loggedAt,{timeConfirmed,sequenceKept});
   d.logs[mealId]={status:'done',ateAt,loggedAt,at:ateAt,planned:row.planned||row.at,
                   deducted:consumed.length>0,consumed,cls,
                   macros:macrosFor(row.meal,consumed)};
