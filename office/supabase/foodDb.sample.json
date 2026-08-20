@@ -1,304 +1,34 @@
 {
   "_header": {
-    "generatedAt": "2026-08-20T17:04:33.446Z",
-    "note": "Hand-verified ~40-item seed (offline default). Run with --online (needs network) to derive the full table. See FILL_ONLINE.",
-    "attribution": "Contains information from Open Food Facts (https://openfoodfacts.org), made available under the Open Database License (ODbL) v1.0 (https://opendatacommons.org/licenses/odbl/1-0/). Nutrition5k dish ground truth: Google Research (https://github.com/google-research-datasets/Nutrition5k).",
-    "fillOnline": {
+    "generatedAt": "2026-08-20T20:41:28.081Z",
+    "note": "Derived compact everyday-food bundle: 37 USDA FNDDS rows + 42 seed/OFF rows.",
+    "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0. Contains information from Open Food Facts (https://openfoodfacts.org), made available under the Open Database License (ODbL) v1.0 (https://opendatacommons.org/licenses/odbl/1-0/). Nutrition5k dish ground truth: Google Research (https://github.com/google-research-datasets/Nutrition5k).",
+    "sources": {
+      "fndds": {
+        "url": "https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_survey_food_csv_2022-10-28.zip",
+        "release": "FNDDS 2019-2020 CSV, 2022-10-28",
+        "license": "Public domain / CC0 1.0"
+      },
       "openFoodFacts": {
-        "hfDataset": "openfoodfacts/product-database",
-        "browse": "https://huggingface.co/datasets/openfoodfacts/product-database",
-        "format": "parquet (food.parquet)",
-        "license": "ODbL v1.0",
-        "keepFields": [
-          "code",
-          "product_name",
-          "serving_quantity",
-          "nutriments.energy-kcal_serving",
-          "nutriments.energy-kcal_100g",
-          "nutriments.proteins_serving",
-          "nutriments.proteins_100g",
-          "nutriments.carbohydrates_serving",
-          "nutriments.carbohydrates_100g",
-          "nutriments.fat_serving",
-          "nutriments.fat_100g"
-        ],
-        "filter": "code != null AND (energy-kcal_serving OR energy-kcal_100g) present",
-        "servingRule": "prefer *_serving; else scale *_100g by serving_quantity/100 (default 100g)."
+        "url": "https://world.openfoodfacts.org/data",
+        "license": "ODbL v1.0"
       },
       "nutrition5k": {
-        "hfDatasets": [
-          "panikos/nutrition5k_dataset",
-          "TeeA/nutrition5k-food-name-gemini"
-        ],
-        "source": "https://github.com/google-research-datasets/Nutrition5k",
-        "use": "per-dish {calories, mass_g, protein, carbs, fat} -> calibrate Food-101 class typical-portion map; sanity-check per-serving kcal."
-      },
-      "food101Labels": {
-        "hfDataset": "ethz/food101",
-        "note": "101 class names become the `key` for source:\"label\" lookups (underscores normalized)."
+        "url": "https://github.com/google-research-datasets/Nutrition5k",
+        "use": "portion calibration reference"
       }
     }
   },
-  "attribution": "Contains information from Open Food Facts (https://openfoodfacts.org), made available under the Open Database License (ODbL) v1.0 (https://opendatacommons.org/licenses/odbl/1-0/). Nutrition5k dish ground truth: Google Research (https://github.com/google-research-datasets/Nutrition5k).",
+  "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0. Contains information from Open Food Facts (https://openfoodfacts.org), made available under the Open Database License (ODbL) v1.0 (https://opendatacommons.org/licenses/odbl/1-0/). Nutrition5k dish ground truth: Google Research (https://github.com/google-research-datasets/Nutrition5k).",
   "items": [
     {
-      "key": "apple_pie",
-      "name": "Apple pie (1 slice)",
-      "kcal": 296,
-      "protein_g": 2.4,
-      "carbs_g": 42.5,
-      "fat_g": 13.8,
-      "serving_g": 125,
-      "source": "seed"
-    },
-    {
-      "key": "pizza",
-      "name": "Cheese pizza (1 slice)",
-      "kcal": 285,
-      "protein_g": 12.2,
-      "carbs_g": 35.6,
-      "fat_g": 10.4,
-      "serving_g": 107,
-      "source": "seed"
-    },
-    {
-      "key": "hamburger",
-      "name": "Hamburger (1 sandwich)",
-      "kcal": 354,
-      "protein_g": 20,
-      "carbs_g": 29,
-      "fat_g": 17,
-      "serving_g": 150,
-      "source": "seed"
-    },
-    {
-      "key": "french_fries",
-      "name": "French fries (medium)",
-      "kcal": 365,
-      "protein_g": 4,
-      "carbs_g": 48,
-      "fat_g": 17,
-      "serving_g": 117,
-      "source": "seed"
-    },
-    {
-      "key": "caesar_salad",
-      "name": "Caesar salad (1 bowl)",
-      "kcal": 190,
+      "key": "almonds",
+      "name": "Almonds (1 oz, ~23)",
+      "kcal": 164,
       "protein_g": 6,
-      "carbs_g": 7,
-      "fat_g": 16,
-      "serving_g": 200,
-      "source": "seed"
-    },
-    {
-      "key": "fried_rice",
-      "name": "Fried rice (1 cup)",
-      "kcal": 238,
-      "protein_g": 6,
-      "carbs_g": 45,
-      "fat_g": 4,
-      "serving_g": 198,
-      "source": "seed"
-    },
-    {
-      "key": "grilled_salmon",
-      "name": "Grilled salmon (1 fillet)",
-      "kcal": 280,
-      "protein_g": 39,
-      "carbs_g": 0,
-      "fat_g": 12.5,
-      "serving_g": 154,
-      "source": "seed"
-    },
-    {
-      "key": "steak",
-      "name": "Beef steak (170g cooked)",
-      "kcal": 430,
-      "protein_g": 50,
-      "carbs_g": 0,
-      "fat_g": 26,
-      "serving_g": 170,
-      "source": "seed"
-    },
-    {
-      "key": "omelette",
-      "name": "Two-egg omelette",
-      "kcal": 188,
-      "protein_g": 13,
-      "carbs_g": 1,
-      "fat_g": 14,
-      "serving_g": 120,
-      "source": "seed"
-    },
-    {
-      "key": "pancakes",
-      "name": "Pancakes (2)",
-      "kcal": 175,
-      "protein_g": 5,
-      "carbs_g": 22,
-      "fat_g": 7,
-      "serving_g": 77,
-      "source": "seed"
-    },
-    {
-      "key": "waffles",
-      "name": "Waffle (1)",
-      "kcal": 218,
-      "protein_g": 6,
-      "carbs_g": 25,
-      "fat_g": 11,
-      "serving_g": 75,
-      "source": "seed"
-    },
-    {
-      "key": "sushi",
-      "name": "Sushi roll (6 pieces)",
-      "kcal": 255,
-      "protein_g": 9,
-      "carbs_g": 38,
-      "fat_g": 7,
-      "serving_g": 200,
-      "source": "seed"
-    },
-    {
-      "key": "ramen",
-      "name": "Ramen (1 bowl)",
-      "kcal": 436,
-      "protein_g": 18,
-      "carbs_g": 54,
-      "fat_g": 17,
-      "serving_g": 500,
-      "source": "seed"
-    },
-    {
-      "key": "chicken_curry",
-      "name": "Chicken curry (1 cup)",
-      "kcal": 293,
-      "protein_g": 24,
-      "carbs_g": 10,
-      "fat_g": 18,
-      "serving_g": 240,
-      "source": "seed"
-    },
-    {
-      "key": "guacamole",
-      "name": "Guacamole (2 tbsp)",
-      "kcal": 45,
-      "protein_g": 0.6,
-      "carbs_g": 3,
-      "fat_g": 4,
-      "serving_g": 30,
-      "source": "seed"
-    },
-    {
-      "key": "hummus",
-      "name": "Hummus (2 tbsp)",
-      "kcal": 71,
-      "protein_g": 2,
       "carbs_g": 6,
-      "fat_g": 5,
-      "serving_g": 30,
-      "source": "seed"
-    },
-    {
-      "key": "donuts",
-      "name": "Glazed donut (1)",
-      "kcal": 269,
-      "protein_g": 3,
-      "carbs_g": 31,
-      "fat_g": 15,
-      "serving_g": 60,
-      "source": "seed"
-    },
-    {
-      "key": "ice_cream",
-      "name": "Vanilla ice cream (1/2 cup)",
-      "kcal": 137,
-      "protein_g": 2.3,
-      "carbs_g": 16,
-      "fat_g": 7.3,
-      "serving_g": 66,
-      "source": "seed"
-    },
-    {
-      "key": "cheesecake",
-      "name": "Cheesecake (1 slice)",
-      "kcal": 401,
-      "protein_g": 7,
-      "carbs_g": 32,
-      "fat_g": 28,
-      "serving_g": 125,
-      "source": "seed"
-    },
-    {
-      "key": "spaghetti_bolognese",
-      "name": "Spaghetti bolognese (1 plate)",
-      "kcal": 460,
-      "protein_g": 22,
-      "carbs_g": 58,
-      "fat_g": 15,
-      "serving_g": 330,
-      "source": "seed"
-    },
-    {
-      "key": "grilled_cheese_sandwich",
-      "name": "Grilled cheese sandwich",
-      "kcal": 400,
-      "protein_g": 16,
-      "carbs_g": 33,
-      "fat_g": 23,
-      "serving_g": 120,
-      "source": "seed"
-    },
-    {
-      "key": "tacos",
-      "name": "Beef taco (1)",
-      "kcal": 210,
-      "protein_g": 9,
-      "carbs_g": 21,
-      "fat_g": 10,
-      "serving_g": 100,
-      "source": "seed"
-    },
-    {
-      "key": "macaroni_and_cheese",
-      "name": "Macaroni and cheese (1 cup)",
-      "kcal": 310,
-      "protein_g": 13,
-      "carbs_g": 40,
-      "fat_g": 12,
-      "serving_g": 200,
-      "source": "seed"
-    },
-    {
-      "key": "chocolate_cake",
-      "name": "Chocolate cake (1 slice)",
-      "kcal": 352,
-      "protein_g": 5,
-      "carbs_g": 51,
-      "fat_g": 16,
-      "serving_g": 95,
-      "source": "seed"
-    },
-    {
-      "key": "french_toast",
-      "name": "French toast (1 slice)",
-      "kcal": 149,
-      "protein_g": 5,
-      "carbs_g": 16,
-      "fat_g": 7,
-      "serving_g": 65,
-      "source": "seed"
-    },
-    {
-      "key": "banana",
-      "name": "Banana (1 medium)",
-      "kcal": 105,
-      "protein_g": 1.3,
-      "carbs_g": 27,
-      "fat_g": 0.4,
-      "serving_g": 118,
+      "fat_g": 14,
+      "serving_g": 28,
       "source": "seed"
     },
     {
@@ -312,93 +42,13 @@
       "source": "seed"
     },
     {
-      "key": "egg",
-      "name": "Egg (1 large)",
-      "kcal": 72,
-      "protein_g": 6.3,
-      "carbs_g": 0.4,
-      "fat_g": 4.8,
-      "serving_g": 50,
-      "source": "seed"
-    },
-    {
-      "key": "white_rice",
-      "name": "White rice (1 cup cooked)",
-      "kcal": 205,
-      "protein_g": 4.3,
-      "carbs_g": 45,
-      "fat_g": 0.4,
-      "serving_g": 158,
-      "source": "seed"
-    },
-    {
-      "key": "chicken_breast",
-      "name": "Chicken breast (1 cooked)",
-      "kcal": 284,
-      "protein_g": 53,
-      "carbs_g": 0,
-      "fat_g": 6.2,
-      "serving_g": 172,
-      "source": "seed"
-    },
-    {
-      "key": "oatmeal",
-      "name": "Oatmeal (1 cup cooked)",
-      "kcal": 166,
-      "protein_g": 5.9,
-      "carbs_g": 28,
-      "fat_g": 3.6,
-      "serving_g": 234,
-      "source": "seed"
-    },
-    {
-      "key": "greek_yogurt",
-      "name": "Greek yogurt, nonfat (1 cup)",
-      "kcal": 100,
-      "protein_g": 17,
-      "carbs_g": 6,
-      "fat_g": 0.7,
-      "serving_g": 170,
-      "source": "seed"
-    },
-    {
-      "key": "almonds",
-      "name": "Almonds (1 oz, ~23)",
-      "kcal": 164,
-      "protein_g": 6,
-      "carbs_g": 6,
-      "fat_g": 14,
-      "serving_g": 28,
-      "source": "seed"
-    },
-    {
-      "key": "peanut_butter",
-      "name": "Peanut butter (2 tbsp)",
-      "kcal": 188,
-      "protein_g": 8,
-      "carbs_g": 6,
-      "fat_g": 16,
-      "serving_g": 32,
-      "source": "seed"
-    },
-    {
-      "key": "whole_milk",
-      "name": "Whole milk (1 cup)",
-      "kcal": 149,
-      "protein_g": 7.7,
-      "carbs_g": 12,
-      "fat_g": 8,
-      "serving_g": 244,
-      "source": "seed"
-    },
-    {
-      "key": "bread_slice",
-      "name": "White bread (1 slice)",
-      "kcal": 75,
-      "protein_g": 2.6,
-      "carbs_g": 14,
-      "fat_g": 1,
-      "serving_g": 28,
+      "key": "apple_pie",
+      "name": "Apple pie (1 slice)",
+      "kcal": 296,
+      "protein_g": 2.4,
+      "carbs_g": 42.5,
+      "fat_g": 13.8,
+      "serving_g": 125,
       "source": "seed"
     },
     {
@@ -412,6 +62,95 @@
       "source": "seed"
     },
     {
+      "key": "baklava",
+      "name": "Baklava",
+      "kcal": 346,
+      "protein_g": 5.28,
+      "carbs_g": 30.24,
+      "fat_g": 23.21,
+      "serving_g": 80,
+      "serving_text": "1 piece",
+      "source": "fdc_fndds",
+      "sourceId": "2343527",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "baklava"
+      ]
+    },
+    {
+      "key": "banana",
+      "name": "Banana (1 medium)",
+      "kcal": 105,
+      "protein_g": 1.3,
+      "carbs_g": 27,
+      "fat_g": 0.4,
+      "serving_g": 118,
+      "source": "seed"
+    },
+    {
+      "key": "beef_burrito",
+      "name": "Burrito, beef, with beans and rice, cheese",
+      "kcal": 743,
+      "protein_g": 35.71,
+      "carbs_g": 85.93,
+      "fat_g": 27.46,
+      "serving_g": 330,
+      "serving_text": "1 large",
+      "source": "fdc_fndds",
+      "sourceId": "2344022",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "beef burrito"
+      ]
+    },
+    {
+      "key": "beignets",
+      "name": "Beignet",
+      "kcal": 188,
+      "protein_g": 2.46,
+      "carbs_g": 24.16,
+      "fat_g": 9.08,
+      "serving_g": 45,
+      "serving_text": "1 beignet",
+      "source": "fdc_fndds",
+      "sourceId": "2343554",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "beignets"
+      ]
+    },
+    {
+      "key": "bread_slice",
+      "name": "White bread (1 slice)",
+      "kcal": 75,
+      "protein_g": 2.6,
+      "carbs_g": 14,
+      "fat_g": 1,
+      "serving_g": 28,
+      "source": "seed"
+    },
+    {
+      "key": "breakfast_burrito",
+      "name": "Egg burrito",
+      "kcal": 448,
+      "protein_g": 19.69,
+      "carbs_g": 36.09,
+      "fat_g": 24.75,
+      "serving_g": 180,
+      "serving_text": "1 item, any size",
+      "source": "fdc_fndds",
+      "sourceId": "2342818",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "breakfast burrito",
+        "egg burrito"
+      ]
+    },
+    {
       "key": "broccoli",
       "name": "Broccoli (1 cup cooked)",
       "kcal": 55,
@@ -422,6 +161,655 @@
       "source": "seed"
     },
     {
+      "key": "bruschetta",
+      "name": "Bruschetta",
+      "kcal": 101,
+      "protein_g": 2.53,
+      "carbs_g": 12.58,
+      "fat_g": 4.49,
+      "serving_g": 59,
+      "serving_text": "1 large or thick slice",
+      "source": "fdc_fndds",
+      "sourceId": "2343132",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "bruschetta"
+      ]
+    },
+    {
+      "key": "caesar_salad",
+      "name": "Caesar salad (1 bowl)",
+      "kcal": 190,
+      "protein_g": 6,
+      "carbs_g": 7,
+      "fat_g": 16,
+      "serving_g": 200,
+      "source": "seed"
+    },
+    {
+      "key": "ceviche",
+      "name": "Ceviche",
+      "kcal": 158,
+      "protein_g": 26.33,
+      "carbs_g": 8.95,
+      "fat_g": 1.9,
+      "serving_g": 250,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2341887",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "ceviche"
+      ]
+    },
+    {
+      "key": "cheesecake",
+      "name": "Cheesecake (1 slice)",
+      "kcal": 401,
+      "protein_g": 7,
+      "carbs_g": 32,
+      "fat_g": 28,
+      "serving_g": 125,
+      "source": "seed"
+    },
+    {
+      "key": "chicken_breast",
+      "name": "Chicken breast (1 cooked)",
+      "kcal": 284,
+      "protein_g": 53,
+      "carbs_g": 0,
+      "fat_g": 6.2,
+      "serving_g": 172,
+      "source": "seed"
+    },
+    {
+      "key": "chicken_burrito",
+      "name": "Burrito, chicken, with beans and rice, cheese",
+      "kcal": 690,
+      "protein_g": 36.76,
+      "carbs_g": 85.93,
+      "fat_g": 21.38,
+      "serving_g": 330,
+      "serving_text": "1 large",
+      "source": "fdc_fndds",
+      "sourceId": "2344030",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "chicken burrito"
+      ]
+    },
+    {
+      "key": "chicken_curry",
+      "name": "Chicken curry (1 cup)",
+      "kcal": 293,
+      "protein_g": 24,
+      "carbs_g": 10,
+      "fat_g": 18,
+      "serving_g": 240,
+      "source": "seed"
+    },
+    {
+      "key": "chicken_salad_sandwich",
+      "name": "Chicken salad sandwich on wheat",
+      "kcal": 659,
+      "protein_g": 35.4,
+      "carbs_g": 45.93,
+      "fat_g": 37.37,
+      "serving_g": 270,
+      "serving_text": "1 large",
+      "source": "fdc_fndds",
+      "sourceId": "2342436",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "chicken salad sandwich"
+      ]
+    },
+    {
+      "key": "chicken_sandwich",
+      "name": "Chicken fillet sandwich, NFS",
+      "kcal": 393,
+      "protein_g": 17.04,
+      "carbs_g": 38.47,
+      "fat_g": 18.84,
+      "serving_g": 140,
+      "serving_text": "1 sandwich, any size",
+      "source": "fdc_fndds",
+      "sourceId": "2342445",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "chicken sandwich"
+      ]
+    },
+    {
+      "key": "chicken_wings",
+      "name": "Chicken wing, fried, coated, from raw",
+      "kcal": 159,
+      "protein_g": 10.66,
+      "carbs_g": 3.28,
+      "fat_g": 11.13,
+      "serving_g": 55,
+      "serving_text": "1 wing, any size",
+      "source": "fdc_fndds",
+      "sourceId": "2341471",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "chicken wings"
+      ]
+    },
+    {
+      "key": "chicken_wrap",
+      "name": "Chicken fillet wrap sandwich, grilled, from fast food",
+      "kcal": 407,
+      "protein_g": 33.6,
+      "carbs_g": 27.82,
+      "fat_g": 16.87,
+      "serving_g": 161,
+      "serving_text": "1 sandwich, any size",
+      "source": "fdc_fndds",
+      "sourceId": "2342462",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "chicken wrap"
+      ]
+    },
+    {
+      "key": "chocolate_cake",
+      "name": "Chocolate cake (1 slice)",
+      "kcal": 352,
+      "protein_g": 5,
+      "carbs_g": 51,
+      "fat_g": 16,
+      "serving_g": 95,
+      "source": "seed"
+    },
+    {
+      "key": "churros",
+      "name": "Churros",
+      "kcal": 189,
+      "protein_g": 2.72,
+      "carbs_g": 21.99,
+      "fat_g": 9.99,
+      "serving_g": 45,
+      "serving_text": "1 regular",
+      "source": "fdc_fndds",
+      "sourceId": "2343553",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "churros"
+      ]
+    },
+    {
+      "key": "clam_chowder",
+      "name": "Clam chowder, NS as to Manhattan or New England style",
+      "kcal": 368,
+      "protein_g": 19.27,
+      "carbs_g": 44.71,
+      "fat_g": 12.45,
+      "serving_g": 593,
+      "serving_text": "1 can (10.75 oz), prepared to directions",
+      "source": "fdc_fndds",
+      "sourceId": "2342601",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "clam chowder"
+      ]
+    },
+    {
+      "key": "club_sandwich",
+      "name": "Club sandwich on white",
+      "kcal": 289,
+      "protein_g": 19.6,
+      "carbs_g": 30.02,
+      "fat_g": 9.72,
+      "serving_g": 130,
+      "serving_text": "1 sandwich, any size",
+      "source": "fdc_fndds",
+      "sourceId": "2342438",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "club sandwich"
+      ]
+    },
+    {
+      "key": "coca_cola",
+      "name": "Coca-Cola Classic (330ml can)",
+      "barcode": "5449000000996",
+      "kcal": 139,
+      "protein_g": 0,
+      "carbs_g": 35,
+      "fat_g": 0,
+      "serving_g": 330,
+      "source": "openfoodfacts",
+      "aliases": [
+        "cola"
+      ]
+    },
+    {
+      "key": "crab_cakes",
+      "name": "Crab, cake",
+      "kcal": 182,
+      "protein_g": 12.24,
+      "carbs_g": 3.81,
+      "fat_g": 12.72,
+      "serving_g": 85,
+      "serving_text": "1 cake or patty",
+      "source": "fdc_fndds",
+      "sourceId": "2341978",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "crab cakes"
+      ]
+    },
+    {
+      "key": "creme_brulee",
+      "name": "Creme brulee",
+      "kcal": 294,
+      "protein_g": 10.56,
+      "carbs_g": 46.41,
+      "fat_g": 7.36,
+      "serving_g": 260,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2341087",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "creme brulee"
+      ]
+    },
+    {
+      "key": "cup_cakes",
+      "name": "Cake or cupcake, NFS",
+      "kcal": 616,
+      "protein_g": 4.97,
+      "carbs_g": 93.8,
+      "fat_g": 25.85,
+      "serving_g": 175,
+      "serving_text": "1 piece/slice, any size",
+      "source": "fdc_fndds",
+      "sourceId": "2343333",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "cupcake"
+      ]
+    },
+    {
+      "key": "donuts",
+      "name": "Glazed donut (1)",
+      "kcal": 269,
+      "protein_g": 3,
+      "carbs_g": 31,
+      "fat_g": 15,
+      "serving_g": 60,
+      "source": "seed",
+      "aliases": [
+        "donut"
+      ]
+    },
+    {
+      "key": "edamame",
+      "name": "Edamame, cooked",
+      "kcal": 224,
+      "protein_g": 18.46,
+      "carbs_g": 13.81,
+      "fat_g": 12.13,
+      "serving_g": 160,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2342911",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "edamame"
+      ]
+    },
+    {
+      "key": "egg",
+      "name": "Egg (1 large)",
+      "kcal": 72,
+      "protein_g": 6.3,
+      "carbs_g": 0.4,
+      "fat_g": 4.8,
+      "serving_g": 50,
+      "source": "seed"
+    },
+    {
+      "key": "falafel",
+      "name": "Falafel",
+      "kcal": 87,
+      "protein_g": 1.41,
+      "carbs_g": 4.92,
+      "fat_g": 7,
+      "serving_g": 17,
+      "serving_text": "1 patty",
+      "source": "fdc_fndds",
+      "sourceId": "2342883",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "falafel"
+      ]
+    },
+    {
+      "key": "falafel_sandwich",
+      "name": "Falafel sandwich",
+      "kcal": 570,
+      "protein_g": 13.44,
+      "carbs_g": 58.09,
+      "fat_g": 31.84,
+      "serving_g": 215,
+      "serving_text": "1 sandwich, any size",
+      "source": "fdc_fndds",
+      "sourceId": "2342960",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "falafel wrap"
+      ]
+    },
+    {
+      "key": "french_fries",
+      "name": "French fries (medium)",
+      "kcal": 365,
+      "protein_g": 4,
+      "carbs_g": 48,
+      "fat_g": 17,
+      "serving_g": 117,
+      "source": "seed",
+      "aliases": [
+        "fries"
+      ]
+    },
+    {
+      "key": "french_toast",
+      "name": "French toast (1 slice)",
+      "kcal": 149,
+      "protein_g": 5,
+      "carbs_g": 16,
+      "fat_g": 7,
+      "serving_g": 65,
+      "source": "seed"
+    },
+    {
+      "key": "fried_rice",
+      "name": "Fried rice (1 cup)",
+      "kcal": 238,
+      "protein_g": 6,
+      "carbs_g": 45,
+      "fat_g": 4,
+      "serving_g": 198,
+      "source": "seed"
+    },
+    {
+      "key": "frozen_yogurt",
+      "name": "Frozen yogurt, NFS",
+      "kcal": 610,
+      "protein_g": 14.4,
+      "carbs_g": 103.68,
+      "fat_g": 17.28,
+      "serving_g": 480,
+      "serving_text": "1 large ice cream cup",
+      "source": "fdc_fndds",
+      "sourceId": "2340831",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "frozen yogurt"
+      ]
+    },
+    {
+      "key": "garlic_bread",
+      "name": "Garlic bread, NFS",
+      "kcal": 1372,
+      "protein_g": 32.78,
+      "carbs_g": 163.65,
+      "fat_g": 65.16,
+      "serving_g": 393,
+      "serving_text": "1 baguette (about 22\" long)",
+      "source": "fdc_fndds",
+      "sourceId": "2343103",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "garlic bread"
+      ]
+    },
+    {
+      "key": "greek_salad",
+      "name": "Greek Salad, no dressing",
+      "kcal": 46,
+      "protein_g": 2.75,
+      "carbs_g": 4.03,
+      "fat_g": 2.25,
+      "serving_g": 105,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2345350",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "greek salad"
+      ]
+    },
+    {
+      "key": "greek_yogurt",
+      "name": "Greek yogurt, nonfat (1 cup)",
+      "kcal": 100,
+      "protein_g": 17,
+      "carbs_g": 6,
+      "fat_g": 0.7,
+      "serving_g": 170,
+      "source": "seed"
+    },
+    {
+      "key": "grilled_cheese_sandwich",
+      "name": "Grilled cheese sandwich",
+      "kcal": 400,
+      "protein_g": 16,
+      "carbs_g": 33,
+      "fat_g": 23,
+      "serving_g": 120,
+      "source": "seed"
+    },
+    {
+      "key": "grilled_salmon",
+      "name": "Grilled salmon (1 fillet)",
+      "kcal": 280,
+      "protein_g": 39,
+      "carbs_g": 0,
+      "fat_g": 12.5,
+      "serving_g": 154,
+      "source": "seed"
+    },
+    {
+      "key": "guacamole",
+      "name": "Guacamole (2 tbsp)",
+      "kcal": 45,
+      "protein_g": 0.6,
+      "carbs_g": 3,
+      "fat_g": 4,
+      "serving_g": 30,
+      "source": "seed"
+    },
+    {
+      "key": "hamburger",
+      "name": "Hamburger (1 sandwich)",
+      "kcal": 354,
+      "protein_g": 20,
+      "carbs_g": 29,
+      "fat_g": 17,
+      "serving_g": 150,
+      "source": "seed",
+      "aliases": [
+        "burger"
+      ]
+    },
+    {
+      "key": "hot_and_sour_soup",
+      "name": "Hot and sour soup",
+      "kcal": 95,
+      "protein_g": 6.3,
+      "carbs_g": 10.61,
+      "fat_g": 2.95,
+      "serving_g": 244,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2342596",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "hot and sour soup"
+      ]
+    },
+    {
+      "key": "huevos_rancheros",
+      "name": "Huevos rancheros",
+      "kcal": 163,
+      "protein_g": 9.02,
+      "carbs_g": 11.95,
+      "fat_g": 8.98,
+      "serving_g": 135,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2342666",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "huevos rancheros"
+      ]
+    },
+    {
+      "key": "hummus",
+      "name": "Hummus (2 tbsp)",
+      "kcal": 71,
+      "protein_g": 2,
+      "carbs_g": 6,
+      "fat_g": 5,
+      "serving_g": 30,
+      "source": "seed"
+    },
+    {
+      "key": "ice_cream",
+      "name": "Vanilla ice cream (1/2 cup)",
+      "kcal": 137,
+      "protein_g": 2.3,
+      "carbs_g": 16,
+      "fat_g": 7.3,
+      "serving_g": 66,
+      "source": "seed"
+    },
+    {
+      "key": "lasagna",
+      "name": "Lasagna with meat",
+      "kcal": 348,
+      "protein_g": 18.63,
+      "carbs_g": 40.43,
+      "fat_g": 12.43,
+      "serving_g": 250,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2344234",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "lasagna"
+      ]
+    },
+    {
+      "key": "macaroni_and_cheese",
+      "name": "Macaroni and cheese (1 cup)",
+      "kcal": 310,
+      "protein_g": 13,
+      "carbs_g": 40,
+      "fat_g": 12,
+      "serving_g": 200,
+      "source": "seed",
+      "aliases": [
+        "mac and cheese"
+      ]
+    },
+    {
+      "key": "macarons",
+      "name": "Cookie, macaroon",
+      "kcal": 110,
+      "protein_g": 0.72,
+      "carbs_g": 14.69,
+      "fat_g": 5.41,
+      "serving_g": 24,
+      "serving_text": "1 cookie",
+      "source": "fdc_fndds",
+      "sourceId": "2343418",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "macaron",
+        "macarons"
+      ]
+    },
+    {
+      "key": "nutella",
+      "name": "Nutella (1 tbsp, 15g)",
+      "barcode": "3017620422003",
+      "kcal": 80,
+      "protein_g": 0.9,
+      "carbs_g": 8.6,
+      "fat_g": 4.6,
+      "serving_g": 15,
+      "source": "openfoodfacts"
+    },
+    {
+      "key": "oatmeal",
+      "name": "Oatmeal (1 cup cooked)",
+      "kcal": 166,
+      "protein_g": 5.9,
+      "carbs_g": 28,
+      "fat_g": 3.6,
+      "serving_g": 234,
+      "source": "seed"
+    },
+    {
+      "key": "omelette",
+      "name": "Two-egg omelette",
+      "kcal": 188,
+      "protein_g": 13,
+      "carbs_g": 1,
+      "fat_g": 14,
+      "serving_g": 120,
+      "source": "seed",
+      "aliases": [
+        "omelet"
+      ]
+    },
+    {
+      "key": "onion_rings",
+      "name": "Fried onion rings",
+      "kcal": 422,
+      "protein_g": 5.03,
+      "carbs_g": 47.93,
+      "fat_g": 23.78,
+      "serving_g": 120,
+      "serving_text": "1 fast food order",
+      "source": "fdc_fndds",
+      "sourceId": "2345582",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "onion rings"
+      ]
+    },
+    {
       "key": "orange",
       "name": "Orange (1 medium)",
       "kcal": 62,
@@ -429,6 +817,87 @@
       "carbs_g": 15,
       "fat_g": 0.2,
       "serving_g": 131,
+      "source": "seed"
+    },
+    {
+      "key": "pad_thai",
+      "name": "Pad Thai, NFS",
+      "kcal": 308,
+      "protein_g": 16.26,
+      "carbs_g": 28.72,
+      "fat_g": 15,
+      "serving_g": 200,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2344288",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "pad thai"
+      ]
+    },
+    {
+      "key": "paella",
+      "name": "Paella, NFS",
+      "kcal": 406,
+      "protein_g": 22.9,
+      "carbs_g": 37.85,
+      "fat_g": 17.21,
+      "serving_g": 240,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2342158",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "paella"
+      ]
+    },
+    {
+      "key": "pancakes",
+      "name": "Pancakes (2)",
+      "kcal": 175,
+      "protein_g": 5,
+      "carbs_g": 22,
+      "fat_g": 7,
+      "serving_g": 77,
+      "source": "seed"
+    },
+    {
+      "key": "peanut_butter",
+      "name": "Peanut butter (2 tbsp)",
+      "kcal": 188,
+      "protein_g": 8,
+      "carbs_g": 6,
+      "fat_g": 16,
+      "serving_g": 32,
+      "source": "seed"
+    },
+    {
+      "key": "pho",
+      "name": "Pho",
+      "kcal": 217,
+      "protein_g": 15.01,
+      "carbs_g": 25.33,
+      "fat_g": 5.51,
+      "serving_g": 244,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2342572",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "pho"
+      ]
+    },
+    {
+      "key": "pizza",
+      "name": "Cheese pizza (1 slice)",
+      "kcal": 285,
+      "protein_g": 12.2,
+      "carbs_g": 35.6,
+      "fat_g": 10.4,
+      "serving_g": 107,
       "source": "seed"
     },
     {
@@ -442,26 +911,192 @@
       "source": "seed"
     },
     {
-      "key": "coca_cola",
-      "name": "Coca-Cola Classic (330ml can)",
-      "barcode": "5449000000996",
-      "kcal": 139,
-      "protein_g": 0,
-      "carbs_g": 35,
-      "fat_g": 0,
-      "serving_g": 330,
-      "source": "openfoodfacts"
+      "key": "ramen",
+      "name": "Ramen (1 bowl)",
+      "kcal": 436,
+      "protein_g": 18,
+      "carbs_g": 54,
+      "fat_g": 17,
+      "serving_g": 500,
+      "source": "seed"
     },
     {
-      "key": "nutella",
-      "name": "Nutella (1 tbsp, 15g)",
-      "barcode": "3017620422003",
-      "kcal": 80,
-      "protein_g": 0.9,
-      "carbs_g": 8.6,
-      "fat_g": 4.6,
-      "serving_g": 15,
-      "source": "openfoodfacts"
+      "key": "ravioli",
+      "name": "Ravioli, cheese-filled, no sauce",
+      "kcal": 277,
+      "protein_g": 11.82,
+      "carbs_g": 34.77,
+      "fat_g": 10,
+      "serving_g": 160,
+      "serving_text": "1 cup",
+      "source": "fdc_fndds",
+      "sourceId": "2344251",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "ravioli"
+      ]
+    },
+    {
+      "key": "samosa",
+      "name": "Samosa",
+      "kcal": 309,
+      "protein_g": 5.11,
+      "carbs_g": 33.07,
+      "fat_g": 17.35,
+      "serving_g": 100,
+      "serving_text": "1 regular/large",
+      "source": "fdc_fndds",
+      "sourceId": "2344214",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "samosa"
+      ]
+    },
+    {
+      "key": "spaghetti_bolognese",
+      "name": "Spaghetti bolognese (1 plate)",
+      "kcal": 460,
+      "protein_g": 22,
+      "carbs_g": 58,
+      "fat_g": 15,
+      "serving_g": 330,
+      "source": "seed"
+    },
+    {
+      "key": "steak",
+      "name": "Beef steak (170g cooked)",
+      "kcal": 430,
+      "protein_g": 50,
+      "carbs_g": 0,
+      "fat_g": 26,
+      "serving_g": 170,
+      "source": "seed"
+    },
+    {
+      "key": "strawberry_shortcake",
+      "name": "Cake, strawberry shortcake",
+      "kcal": 375,
+      "protein_g": 5.79,
+      "carbs_g": 70.16,
+      "fat_g": 8.28,
+      "serving_g": 175,
+      "serving_text": "1 piece/slice, any size",
+      "source": "fdc_fndds",
+      "sourceId": "2343376",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "strawberry shortcake"
+      ]
+    },
+    {
+      "key": "sushi",
+      "name": "Sushi roll (6 pieces)",
+      "kcal": 255,
+      "protein_g": 9,
+      "carbs_g": 38,
+      "fat_g": 7,
+      "serving_g": 200,
+      "source": "seed"
+    },
+    {
+      "key": "tacos",
+      "name": "Beef taco (1)",
+      "kcal": 210,
+      "protein_g": 9,
+      "carbs_g": 21,
+      "fat_g": 10,
+      "serving_g": 100,
+      "source": "seed",
+      "aliases": [
+        "taco"
+      ]
+    },
+    {
+      "key": "tiramisu",
+      "name": "Tiramisu",
+      "kcal": 621,
+      "protein_g": 10.48,
+      "carbs_g": 51.64,
+      "fat_g": 42.6,
+      "serving_g": 175,
+      "serving_text": "1 piece",
+      "source": "fdc_fndds",
+      "sourceId": "2341105",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "tiramisu"
+      ]
+    },
+    {
+      "key": "tuna_sandwich",
+      "name": "Tuna salad sandwich on white",
+      "kcal": 589,
+      "protein_g": 26.7,
+      "carbs_g": 49.36,
+      "fat_g": 31.75,
+      "serving_g": 270,
+      "serving_text": "1 regular or 6\" submarine",
+      "source": "fdc_fndds",
+      "sourceId": "2342479",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "tuna sandwich"
+      ]
+    },
+    {
+      "key": "turkey_sandwich",
+      "name": "Turkey sandwich on white",
+      "kcal": 331,
+      "protein_g": 21.05,
+      "carbs_g": 46.39,
+      "fat_g": 6.44,
+      "serving_g": 175,
+      "serving_text": "1 large",
+      "source": "fdc_fndds",
+      "sourceId": "2342426",
+      "license": "CC0-1.0",
+      "attribution": "USDA FoodData Central, Food and Nutrient Database for Dietary Studies (FNDDS) 2019-2020, public domain / CC0 1.0.",
+      "aliases": [
+        "turkey sandwich"
+      ]
+    },
+    {
+      "key": "waffles",
+      "name": "Waffle (1)",
+      "kcal": 218,
+      "protein_g": 6,
+      "carbs_g": 25,
+      "fat_g": 11,
+      "serving_g": 75,
+      "source": "seed"
+    },
+    {
+      "key": "white_rice",
+      "name": "White rice (1 cup cooked)",
+      "kcal": 205,
+      "protein_g": 4.3,
+      "carbs_g": 45,
+      "fat_g": 0.4,
+      "serving_g": 158,
+      "source": "seed",
+      "aliases": [
+        "rice"
+      ]
+    },
+    {
+      "key": "whole_milk",
+      "name": "Whole milk (1 cup)",
+      "kcal": 149,
+      "protein_g": 7.7,
+      "carbs_g": 12,
+      "fat_g": 8,
+      "serving_g": 244,
+      "source": "seed"
     }
   ]
 }

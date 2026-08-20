@@ -66,6 +66,12 @@ export function loadFoodDb(db) {
       const nk = normalizeKey(it.name);
       if (!byKey.has(nk)) byKey.set(nk, it);
     }
+    if (Array.isArray(it.aliases)) {
+      for (const alias of it.aliases) {
+        const nk = normalizeKey(alias);
+        if (nk && !byKey.has(nk)) byKey.set(nk, it);
+      }
+    }
     if (it.barcode) byBarcode.set(String(it.barcode).trim(), it);
   }
   return { attribution: db.attribution || '', items: db.items, byKey, byBarcode };
@@ -116,10 +122,10 @@ export function createKcalEngine(source) {
       const nk = normalizeKey(key);
       hit = db.byKey.get(nk) || null;
       if (hit) {
-        confidence = CONFIDENCE.MANUAL_EXACT;
+        confidence = manualExactConfidence(hit);
       } else if (nk) {
         hit = fuzzyFind(db, nk);         // plausible partial match — confirm it
-        if (hit) confidence = CONFIDENCE.MANUAL_FUZZY;
+        if (hit) { const match = hit; hit = match.item; confidence = match.confidence; }
       }
     }
 
@@ -160,21 +166,43 @@ export async function createKcalEngineFromPath(path) {
   return createKcalEngine(await loadFoodDbFromPath(path));
 }
 
+const WEAK_TOKENS = new Set(['a','an','the','and','or','with','style','nfs','ns','to','from','fast','food','restaurant','sandwich','wrap','bowl','plate','meal','piece','slice','cup','any','size','regular','large','small']);
+const CRITICAL_TOKENS = new Set(['chicken','turkey','beef','pork','fish','salmon','shrimp','crab','lobster','tuna','egg','eggs','cheese','bean','beans','rice','paneer','falafel','samosa','pho','ramen','burrito','taco','pizza','burger','hamburger','hotdog','hot','dog']);
+const HEAD_GROUPS = [
+  ['burger','hamburger'], ['sandwich','sub'], ['wrap'], ['burrito'], ['taco','tacos'],
+  ['pizza'], ['salad'], ['soup','chowder','bisque','pho','ramen'], ['cake','pie','tiramisu'],
+  ['rice','risotto'], ['pasta','spaghetti','lasagna','ravioli','gnocchi'], ['dumpling','dumplings'],
+];
+
+function tokenSet(s) { return new Set(normalizeKey(s).split(' ').filter(Boolean)); }
+function meaningful(tokens) { return tokens.filter(t => !WEAK_TOKENS.has(t)); }
+function headGroup(tokens) { return HEAD_GROUPS.find(g => g.some(t => tokens.includes(t))) || null; }
+function manualExactConfidence(hit) { return hit && hit.source === 'fdc_fndds' ? 0.78 : CONFIDENCE.MANUAL_EXACT; }
+function candidateText(it) { return [it.key, it.name, ...(Array.isArray(it.aliases) ? it.aliases : [])].join(' '); }
+
 function fuzzyFind(db, nk) {
   const tokens = nk.split(' ').filter(Boolean);
-  let best = null, bestScore = 0;
+  const useful = meaningful(tokens);
+  const critical = useful.filter(t => CRITICAL_TOKENS.has(t));
+  const head = headGroup(tokens);
+  let best = null, bestScore = 0, bestConfidence = CONFIDENCE.MISS;
   for (const it of db.items) {
-    const name = normalizeKey(it.name || it.key || '');
-    if (!name) continue;
-    let score = 0;
-    if (name.includes(nk) || nk.includes(name)) score = 3;
-    else {
-      const nameTokens = new Set(name.split(' '));
-      score = tokens.reduce((a, t) => a + (nameTokens.has(t) ? 1 : 0), 0);
-    }
-    if (score > bestScore) { bestScore = score; best = it; }
+    const text = normalizeKey(candidateText(it));
+    if (!text) continue;
+    const cTokens = [...tokenSet(text)];
+    const cSet = new Set(cTokens);
+    if (critical.length && !critical.every(t => cSet.has(t))) continue;
+    if (head && !head.some(t => cSet.has(t))) continue;
+    const matched = tokens.filter(t => cSet.has(t)).length;
+    if (!matched) continue;
+    const coverage = useful.length ? useful.filter(t => cSet.has(t)).length / useful.length : matched / tokens.length;
+    const phrase = text.includes(nk) || nk.includes(text);
+    const sourceBoost = it.source === 'fdc_fndds' ? 0.35 : it.source === 'seed' ? 0.2 : 0.05;
+    const score = (phrase ? 2 : 0) + coverage + sourceBoost + (critical.length ? 0.5 : 0);
+    const confidence = phrase && coverage >= 0.7 ? 0.58 : Math.min(CONFIDENCE.MANUAL_FUZZY, 0.25 + coverage * 0.2);
+    if (score > bestScore) { bestScore = score; best = it; bestConfidence = confidence; }
   }
-  return bestScore > 0 ? best : null;
+  return bestScore > 0 ? { item: best, confidence: bestConfidence } : null;
 }
 
 function round2(n) { return Math.round(n * 100) / 100; }

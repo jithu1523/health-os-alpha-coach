@@ -19,6 +19,8 @@ const DB = {
     { key: 'apple_pie', name: 'Apple pie (1 slice)', kcal: 296, protein_g: 2.4, carbs_g: 42.5, fat_g: 13.8, serving_g: 125, source: 'seed' },
     { key: 'coca_cola', name: 'Coca-Cola Classic (330ml can)', barcode: '5449000000996', kcal: 139, protein_g: 0, carbs_g: 35, fat_g: 0, serving_g: 330, source: 'openfoodfacts' },
     { key: 'chicken_breast', name: 'Chicken breast (1 cooked)', kcal: 284, protein_g: 53, carbs_g: 0, fat_g: 6.2, serving_g: 172, source: 'seed' },
+    { key: 'chicken_sandwich', name: 'Chicken fillet sandwich, NFS', aliases: ['chicken sandwich'], kcal: 393, protein_g: 17.04, carbs_g: 38.47, fat_g: 18.84, serving_g: 140, source: 'fdc_fndds' },
+    { key: 'hamburger', name: 'Hamburger (1 sandwich)', aliases: ['burger'], kcal: 354, protein_g: 20, carbs_g: 29, fat_g: 17, serving_g: 150, source: 'seed' },
   ],
 };
 
@@ -68,6 +70,25 @@ function approx(a, b, eps = 0.01) { return a != null && Math.abs(a - b) <= eps; 
   const fuzzy = estimateKcal({ source: 'manual', key: 'grilled chicken' });
   ok('manual fuzzy: partial match found', fuzzy.kcal != null, `matched=${fuzzy.matchedKey}`);
   ok('manual fuzzy: low confidence -> needsConfirmation', fuzzy.needsConfirmation === true, `conf=${fuzzy.confidence}`);
+}
+
+// --- 3b. Match honesty: critical/head token agreement ------------------------
+{
+  const chicken = estimateKcal({ source: 'manual', key: 'chicken sandwich' });
+  ok('match honesty: chicken sandwich resolves to chicken row',
+    chicken.matchedKey === 'chicken_sandwich' && chicken.needsConfirmation === false,
+    `matched=${chicken.matchedKey} conf=${chicken.confidence}`);
+  ok('match honesty: chicken sandwich never becomes hamburger',
+    chicken.matchedKey !== 'hamburger' && !/hamburger/i.test(chicken.matchedName || ''),
+    `matched=${chicken.matchedKey} name=${chicken.matchedName}`);
+  const chickenBurger = estimateKcal({ source: 'manual', key: 'chicken burger' });
+  ok('match honesty: chicken burger asks instead of borrowing hamburger',
+    chickenBurger.kcal === null && chickenBurger.needsConfirmation === true && chickenBurger.matchedKey === null,
+    `matched=${chickenBurger.matchedKey} conf=${chickenBurger.confidence}`);
+  const beefSandwich = estimateKcal({ source: 'manual', key: 'beef sandwich' });
+  ok('match honesty: beef sandwich asks instead of borrowing chicken sandwich',
+    beefSandwich.kcal === null && beefSandwich.needsConfirmation === true && beefSandwich.matchedKey === null,
+    `matched=${beefSandwich.matchedKey} conf=${beefSandwich.confidence}`);
 }
 
 // --- 4. Portion scaling ------------------------------------------------------

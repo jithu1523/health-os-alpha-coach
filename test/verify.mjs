@@ -61,6 +61,8 @@ ok('supabase adapter is dormant and offline', A().Store.adapters.supabase.enable
 ok('food lookup ships off by default', A().foodLookupOn() === false);
 ok('food lookup off leaves the existing dish estimator unchanged', A().estimateDish('pizza', 'regular').kcal === 780);
 {
+  ok('bundled food DB expanded beyond the seed set', A().FOOD_DB.items.length > 42, `count=${A().FOOD_DB.items.length}`);
+  ok('bundled food DB includes USDA FNDDS attribution', /FoodData Central/.test(A().FOOD_DB.attribution) && A().FOOD_DB.items.some(x => x.source === 'fdc_fndds'));
   const manual = A().estimateKcal({ source: 'manual', key: 'pizza' });
   ok('manual food lookup is an estimate with confidence', manual.isEstimate === true && manual.kcal === 285 && manual.confidence === 0.7);
   ok('manual exact match can be used without low-confidence warning', manual.needsConfirmation === false);
@@ -68,9 +70,25 @@ ok('food lookup off leaves the existing dish estimator unchanged', A().estimateD
   ok('barcode lookup uses the barcode index', barcode.kcal === 139 && barcode.confidence === 0.95);
   const label = A().estimateKcal({ source: 'label', key: 'apple_pie' });
   ok('label lookup keeps the Phase 3 classifier seam', label.kcal === 296 && label.confidence === 0.8);
-  const fuzzy = A().estimateKcal({ source: 'manual', key: 'cola' });
+  const chickenSandwich = A().estimateKcal({ source: 'manual', key: 'chicken sandwich' });
+  ok('chicken sandwich resolves to chicken, never hamburger',
+    chickenSandwich.matchedKey === 'chicken_sandwich' && !/hamburger/i.test(chickenSandwich.matchedName || '') && chickenSandwich.needsConfirmation === false,
+    JSON.stringify(chickenSandwich));
+  const beefSandwich = A().estimateKcal({ source: 'manual', key: 'beef sandwich' });
+  ok('near-miss beef sandwich asks instead of borrowing chicken sandwich',
+    beefSandwich.kcal === null && beefSandwich.needsConfirmation === true && beefSandwich.matchedKey === null,
+    JSON.stringify(beefSandwich));
+  const chickenBurger = A().estimateKcal({ source: 'manual', key: 'chicken burger' });
+  ok('near-miss chicken burger asks instead of matching hamburger',
+    chickenBurger.kcal === null && chickenBurger.needsConfirmation === true && chickenBurger.matchedKey === null,
+    JSON.stringify(chickenBurger));
+  const fishChips = A().estimateKcal({ source: 'manual', key: 'fish and chips' });
+  ok('uncovered Food-101 labels ask instead of guessing a wrong dish',
+    fishChips.kcal === null && fishChips.needsConfirmation === true && fishChips.matchedKey === null,
+    JSON.stringify(fishChips));
+  const fuzzy = A().estimateKcal({ source: 'manual', key: 'grilled chicken' });
   ok('low-confidence food lookup asks instead of asserting', fuzzy.needsConfirmation === true && fuzzy.confidence < 0.5);
-  const miss = A().estimateKcal({ source: 'manual', key: 'moon soup' });
+  const miss = A().estimateKcal({ source: 'manual', key: 'zzznotarealfood' });
   ok('food lookup miss does not fabricate calories', miss.kcal === null && miss.needsConfirmation === true);
   ok('food lookup carries ODbL attribution', /Open Food Facts/.test(manual.attribution));
 }
