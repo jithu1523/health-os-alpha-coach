@@ -2253,13 +2253,80 @@ function explainShift(prevRow, justLoggedAt){
    push subscription — this covers the open-but-hidden case honestly, and the
    permission plumbing is the same one a service worker would reuse. */
 const Notify={
+  timers:[],
+  sw:{state:'idle',detail:'Not attempted yet.',script:'alpha-coach-sw.js'},
   supported(){ return typeof Notification!=='undefined'; },
   get status(){ return this.supported()?Notification.permission:'unsupported'; },
-  canServeInBackground(){ return typeof navigator!=='undefined'&&!!navigator.serviceWorker&&location.protocol!=='file:'; },
+  canServeInBackground(){
+    return typeof navigator!=='undefined'&&!!navigator.serviceWorker&&typeof location!=='undefined'&&/^https?:$/.test(location.protocol)&&location.protocol!=='file:';
+  },
+  swUrl(){
+    try{ return new URL(this.sw.script, location.href).href; }catch(e){ return this.sw.script; }
+  },
+  async registerServiceWorker(){
+    if(!this.canServeInBackground()){
+      this.sw={...this.sw,state:'local',detail:'Local-file or unsupported browser. Keep the tab open for reminders.'};
+      return false;
+    }
+    if(this.sw.state==='ready') return true;
+    try{
+      const reg=await navigator.serviceWorker.register(this.swUrl(),{scope:'./'});
+      this.sw={...this.sw,state:'ready',detail:'Service worker registered for this served copy.',scope:reg&&reg.scope};
+      return true;
+    }catch(e){
+      this.sw={...this.sw,state:'fallback',detail:'Service worker registration failed. Reminders use this tab until the served worker file is available.',error:String(e&&e.message||e)};
+      return false;
+    }
+  },
   async ask(){
     if(!this.supported()) return 'unsupported';
     if(Notification.permission==='granted') return 'granted';
     try{ return await Notification.requestPermission(); }catch(e){ return 'denied'; }
+  },
+  plan(){
+    const d=D(); if(!d) return [];
+    const rows=activeRows().filter(r=>r.status==='pending');
+    return rows.flatMap(row=>{
+      const m=row.meal;
+      return [
+        {key:m.id+':pre',mealId:m.id,kind:'pre',at:row.at-SOON_MS,title:'Coming up',body:`${m.name} is coming up at ${fmtTime(row.at)}. It takes about ${m.prepMin} minutes to prepare.`},
+        {key:m.id+':due',mealId:m.id,kind:'due',at:row.at,title:'Time to eat',body:`Time to eat: ${m.name}. Log it when you are done.`},
+        {key:m.id+':late1',mealId:m.id,kind:'late1',at:row.at+OVERDUE_MS,title:'Still open',body:`${m.name} was due at ${fmtTime(row.at)}. Did you eat it, or would you like more time?`}
+      ];
+    }).sort((a,b)=>a.at-b.at);
+  },
+  clearSchedule(){
+    this.timers.forEach(t=>clearTimeout(t));
+    this.timers=[];
+  },
+  schedule(){
+    this.clearSchedule();
+    if(!S.notify||this.status!=='granted') return [];
+    const d=D(); if(!d) return [];
+    const planned=this.plan();
+    const due=planned.filter(e=>e.at>now()&&!d.reminders.some(r=>r.key===e.key));
+    due.forEach(e=>{
+      const delay=Math.min(e.at-now(),2147483647);
+      this.timers.push(setTimeout(()=>{
+        const day=D(); if(!day) return;
+        const row=activeRows().find(r=>r.meal.id===e.mealId);
+        if(!row||row.status!=='pending') return;
+        pushReminder(day,e.mealId,e.kind,e.body);
+        save();
+      },Math.max(0,delay)));
+    });
+    return planned;
+  },
+  nextEvent(){ return this.plan().find(e=>e.at>now())||null; },
+  settingsNote(){
+    if(this.status==='unsupported') return '';
+    const next=this.nextEvent(), plan=this.plan();
+    if(S.notify&&this.status==='granted') return next
+      ? `Scheduled from today's wake-derived meal times. Next: ${next.title.toLowerCase()} at ${fmtTime(next.at)}.`
+      : 'No pending meal reminders for today.';
+    return plan.length
+      ? `${plan.length} meal reminders can be scheduled from today's wake-derived plan.`
+      : 'Start the day and I will derive reminder times from your wake-up.';
   },
   send(title, body){
     if(!S.notify) return false;
@@ -3780,6 +3847,8 @@ function ScreenSettings(){
               :'Off — reminders only appear while the app is open.'}</p>
           ${!Notify.canServeInBackground()?`<p class="talk" style="font-size:12.5px;color:var(--faint);margin-top:6px">
             Opened as a local file, so the tab has to stay open. Serve it over https and a service worker can wake it fully closed.</p>`:''}
+          ${Notify.settingsNote()?`<p class="talk" style="font-size:12.5px;color:var(--faint);margin-top:6px">${esc(Notify.settingsNote())}</p>`:''}
+          ${Notify.canServeInBackground()?`<p class="talk" style="font-size:12.5px;color:var(--faint);margin-top:6px">${esc(Notify.sw.detail)}</p>`:''}
         </div>
         <button class="btn sm ${S.notify?'':'primary'}" data-act="toggleNotify" ${Notify.status==='unsupported'?'disabled':''}>
           ${S.notify?'Turn off':'Turn on'}</button>
@@ -4709,12 +4778,14 @@ function renderNow(){
   {
     if(!S.onboarded){
       const f0=snapFocus();
+      Notify.clearSchedule();
       $('#app').innerHTML=''; mounted=false;
       $('#overlay').innerHTML=Onboarding();
       restoreFocus(f0);
       return;
     }
     evaluateReminders();
+    Notify.schedule();
     autoResolveStale();
     checkReplacements();
     S.ui.pointsFeed=(S.ui.pointsFeed||[]).slice(-4);
@@ -5157,12 +5228,14 @@ const ACT={
     toast(`${r.it.name} ${fmtQty(r.it.base,r.before)} → ${fmtQty(r.it.base,r.after)}.`);
   },
   async toggleNotify(){
-    if(S.notify){ S.notify=false; save(); render(); toast('Reminders will stay inside the app.'); return; }
+    if(S.notify){ S.notify=false; Notify.clearSchedule(); save(); render(); toast('Reminders will stay inside the app.'); return; }
     const r=await Notify.ask();
     if(r!=='granted'){ toast(r==='unsupported'?'This browser does not support notifications.':'Permission declined — reminders stay in-app.'); return; }
+    await Notify.registerServiceWorker();
     S.notify=true; save(); render();
+    Notify.schedule();
     Notify.send('Alpha Coach','Reminders are on. You will hear from me before each meal.');
-    toast('Reminders on. They fire when this tab is in the background.');
+    toast(Notify.canServeInBackground()?'Reminders on. Meal times are scheduled from your wake-up.':'Reminders on. Keep this tab open for local-file reminders.');
   },
   theme(v){ S.theme=v; applyTheme(); save(); render(); toast(v==='grove'?'Grove palette on.':'Back to Ember.'); },
   scan(){ toast('Label scanning arrives with the mobile build — for now type it or use a preset.'); },

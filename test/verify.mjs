@@ -140,6 +140,45 @@ ok('first meal uses the plan interval, not a clock time', (() => {
 })());
 ok('no phantom shortages with the kitchen off', A().shortages().length === 0);
 {
+  const notifyRows = A().sched().rows;
+  const plan = A().Notify.plan();
+  ok('notification plan is derived from wake-based meal times',
+    plan.length === notifyRows.length * 3 &&
+    plan[0].mealId === notifyRows[0].meal.id &&
+    plan[0].at === notifyRows[0].at - 45 * MIN &&
+    plan.find(e => e.key === notifyRows[0].meal.id + ':due').at === notifyRows[0].at &&
+    plan.find(e => e.key === notifyRows[0].meal.id + ':late1').at === notifyRows[0].at + 30 * MIN,
+    JSON.stringify(plan.slice(0, 3)));
+  const oldNotification = W.Notification;
+  const oldServiceWorker = W.navigator.serviceWorker;
+  const registered = [];
+  class MockNotification { constructor(title, opts) { registered.push({ title, opts }); } }
+  MockNotification.permission = 'default';
+  MockNotification.requestPermission = async () => { MockNotification.permission = 'granted'; return 'granted'; };
+  W.Notification = MockNotification;
+  Object.defineProperty(W.navigator, 'serviceWorker', {
+    value: { register: async (url, opts) => { registered.push({ url, opts }); return { scope: opts.scope }; } },
+    configurable: true
+  });
+  ok('notification settings explain derived scheduling', /wake-derived|derive reminder times/.test(A().Notify.settingsNote()), A().Notify.settingsNote());
+  const permission = await A().Notify.ask();
+  const swReady = await A().Notify.registerServiceWorker();
+  A().S.notify = true;
+  const scheduled = A().Notify.schedule();
+  ok('served notification scaffold registers the service worker script',
+    permission === 'granted' && swReady === true &&
+    registered.some(x => /alpha-coach-sw\.js$/.test(x.url || '') && x.opts && x.opts.scope === './'),
+    JSON.stringify(registered));
+  ok('notification timers are scheduled only after opt-in permission',
+    scheduled.length === plan.length && A().Notify.timers.length > 0,
+    `scheduled=${scheduled.length} timers=${A().Notify.timers.length}`);
+  A().Notify.clearSchedule();
+  ok('notification timers can be cleared on opt-out', A().Notify.timers.length === 0);
+  A().S.notify = false;
+  if (oldNotification === undefined) delete W.Notification; else W.Notification = oldNotification;
+  Object.defineProperty(W.navigator, 'serviceWorker', { value: oldServiceWorker, configurable: true });
+}
+{
   const originalKey = d().key;
   const namesFor = key => {
     d().key = key;
