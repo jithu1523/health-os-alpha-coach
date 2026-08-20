@@ -68,15 +68,6 @@
   --d-3:380ms;
 
   --rail:224px;
-  --geo-corner:18px;
-  --geo-cut:polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-  --geo-stroke:1.7;
-  --mascot-body:var(--peach);
-  --mascot-body-2:var(--surface-2);
-  --mascot-line:var(--accent-ink);
-  --mascot-panel:var(--ink-2);
-  --mascot-eye:var(--lime);
-  --mascot-arc-off:var(--line-2);
 }
 /* the previous palette, kept switchable from Settings */
 html[data-theme="ember"]{
@@ -88,9 +79,6 @@ html[data-theme="ember"]{
   --lime:#E6C79B; --lime-2:#F0DCC0; --lime-ink:#8E4019;
   --peach:#F0D5BC; --mint:#D8E2D2; --lilac:#E4DCD2; --sky:#DDE3E8;
   --ok:#3D7A61; --warn:#A8720F;
-  --mascot-body:var(--peach); --mascot-body-2:var(--surface-2);
-  --mascot-line:var(--accent-ink); --mascot-panel:var(--ink-2);
-  --mascot-eye:var(--lime); --mascot-arc-off:var(--line-2);
 }
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{
@@ -102,7 +90,11 @@ html[data-theme="ember"]{
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{
-  margin:0;color:var(--ink);background:var(--bg);
+  margin:0;color:var(--ink);
+  background:
+    radial-gradient(70% 55% at 82% -8%, var(--bg-2), transparent 62%),
+    radial-gradient(60% 45% at 0% 100%, var(--bg-2), transparent 60%),
+    var(--bg);
   font-family:var(--f-ui);font-size:15px;line-height:1.5;
   -webkit-font-smoothing:antialiased;overflow:hidden;
 }
@@ -247,45 +239,22 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
    mascot
    ============================================================ */
 .mascot{display:block;overflow:visible}
-.m-ground{fill:var(--ink);opacity:.07}
-.m-body{transform-origin:50% 92%;animation:mascotBreath 5.6s var(--ease) infinite}
-.m-head,.m-arm,.m-hand{fill:var(--mascot-body);stroke:var(--mascot-line);stroke-width:var(--geo-stroke)}
-.m-torso,.m-leg,.m-foot{fill:var(--mascot-body-2);stroke:var(--mascot-line);stroke-width:var(--geo-stroke)}
-.m-sash,.m-chip{fill:var(--mascot-panel)}
-.m-neck{fill:var(--mascot-line)}
-.m-eye{fill:var(--mascot-eye);stroke:var(--mascot-line);stroke-width:var(--geo-stroke)}
-.m-mouth{fill:none;stroke:var(--mascot-line);stroke-width:2.4;stroke-linecap:round;transform-box:fill-box;transform-origin:center}
-.m-lid{fill:var(--mascot-line);transform-box:fill-box;transform-origin:center;transform:scaleY(0);animation:mascotBlink 7.5s infinite}
-.m-arc{transform-origin:150px 190px}
-.m-arc path{fill:none;stroke-linecap:round;stroke-width:11}
-.m-arc .arc-bg{stroke:var(--mascot-arc-off);opacity:.9}
-.m-arc .arc-fg{stroke:var(--accent);stroke-dasharray:1;stroke-dashoffset:calc(1 - var(--arc-p))}
+.m-body{transform-origin:50% 92%;animation:breathe 5.6s var(--ease) infinite}
+@keyframes breathe{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(0,-4px,0) scale(1.012)}}
+.m-arc{transform-origin:150px 190px;opacity:.9}
 .m-arc.live{animation:arcBreath 5.6s var(--ease) infinite}
 .m-arc.live.a2{animation-delay:.3s}
 .m-arc.live.a3{animation-delay:.6s}
-@keyframes mascotBreath{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(0,-4px,0) scale(1.012)}}
-@keyframes arcBreath{0%,100%{opacity:.62;transform:scale(.97)}50%{opacity:1;transform:scale(1.018)}}
-@keyframes mascotBlink{0%,93%,100%{transform:scaleY(0)}96%{transform:scaleY(1)}}
-.m-wake .m-body{animation:mascotWake 900ms var(--ease-out) both, mascotBreath 5.6s var(--ease) 900ms infinite}
-@keyframes mascotWake{from{transform:translate3d(0,14px,0) scale(.96);opacity:.7}to{transform:none;opacity:1}}
-.m-cheer .m-body{animation:mascotCheer 700ms var(--ease-out) both, mascotBreath 5.6s var(--ease) 700ms infinite}
-@keyframes mascotCheer{0%{transform:none}38%{transform:translate3d(0,-12px,0) scale(1.03)}72%{transform:translate3d(0,2px,0) scale(.995)}100%{transform:none}}
-.m-cheer .m-arc .arc-fg{opacity:1}
-.m-concern .m-body{animation:mascotLean 2.8s var(--ease) infinite}
-@keyframes mascotLean{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-1.5deg) translate3d(-2px,0,0)}}
-.m-concern .m-mouth{transform:translate3d(0,2px,0) scaleY(.75)}
-.m-rest .m-body{animation:mascotBreath 8.4s var(--ease) infinite}
-.m-rest .m-lid{transform:scaleY(1);animation:none;opacity:.86}
-.m-rest .m-arc.live{animation-duration:8.4s}
-@media (prefers-reduced-motion: reduce){
-  .m-body,.m-arc.live,.m-lid{animation:none !important}
-}
-
-.geo-panel{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow);position:relative;overflow:hidden}
-.geo-panel::before{content:"";position:absolute;inset:0;clip-path:var(--geo-cut);border:1px solid var(--accent-line);opacity:.5;pointer-events:none}
-.geo-rail{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden}
-.geo-rail > i{display:block;height:100%;border-radius:inherit;background:var(--accent);transform-origin:left center;transform:scaleX(var(--p,0));transition:transform var(--d-3) var(--ease-out)}
-.geo-notch{clip-path:var(--geo-cut)}
+@keyframes arcBreath{0%,100%{opacity:.5;transform:scale(.965)}50%{opacity:1;transform:scale(1.02)}}
+.m-lid{transform-box:fill-box;transform-origin:center;transform:scaleY(0);animation:mBlink 7.5s infinite}
+@keyframes mBlink{0%,93%,100%{transform:scaleY(0)}96%{transform:scaleY(1)}}
+.m-wake .m-body{animation:mWake 900ms var(--ease-out) both, breathe 5.6s var(--ease) 900ms infinite}
+@keyframes mWake{from{transform:translate3d(0,14px,0) scale(.96)}to{transform:none}}
+.m-cheer .m-body{animation:mCheer 700ms var(--ease-out) both, breathe 5.6s var(--ease) 700ms infinite}
+@keyframes mCheer{0%{transform:none}35%{transform:translate3d(0,-12px,0) scale(1.03)}70%{transform:translate3d(0,2px,0) scale(.995)}100%{transform:none}}
+.m-concern .m-body{animation:mLean 2.8s var(--ease) infinite}
+@keyframes mLean{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-1.6deg) translate3d(-2px,0,0)}}
+.m-rest .m-body{animation:breathe 8.4s var(--ease) infinite}
 
 /* ============================================================
    meal cards
@@ -388,11 +357,10 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .chat-fab:hover{background:var(--surface-2)}
 .chat-fab:active{transform:scale(.96)}
 
-.hero{position:relative;overflow:hidden;border-radius:var(--r-lg);padding:20px;border:1px solid var(--line);
+.hero{position:relative;overflow:hidden;border-radius:24px;padding:20px;border:1px solid var(--line);
   background:var(--surface);transition:border-color var(--d-2) var(--ease)}
-.hero::before{content:"";position:absolute;inset:0;clip-path:var(--geo-cut);border:1px solid var(--accent-line);opacity:.5;pointer-events:none}
-.hero-glow{position:absolute;inset:0;pointer-events:none;opacity:.5;
-  background:linear-gradient(135deg, transparent 0 72%, var(--accent-soft) 72% 100%)}
+.hero-glow{position:absolute;inset:-40% -20% auto -20%;height:180%;pointer-events:none;opacity:.5;
+  background:radial-gradient(60% 50% at 20% 0%, rgba(200,94,44,.16), transparent 70%)}
 .hero[data-hero]{animation:riseIn var(--d-3) var(--ease-out) both}
 .hero-due{border-color:var(--accent-line)}
 .hero-due .hero-glow{opacity:1}
@@ -408,9 +376,9 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .hero-note{display:inline-flex;align-items:center;gap:5px;margin-top:9px;font-size:12.5px;font-weight:600;
   color:var(--accent-ink);background:var(--accent-soft);border:1px solid var(--accent-line);padding:5px 10px;border-radius:99px}
 .hero-note:active{transform:scale(.96)}
-.hero-rail{position:relative;height:8px;border-radius:99px;background:var(--surface-2);margin:16px 0 14px;overflow:hidden}
+.hero-rail{position:relative;height:4px;border-radius:99px;background:rgba(23,20,15,.08);margin:16px 0 14px;overflow:hidden}
 .hero-rail > i{display:block;height:100%;border-radius:99px;background:var(--accent);transform-origin:left center;
-  transition:transform var(--d-3) var(--ease-out)}
+  transition:transform 700ms var(--ease-out)}
 .hero-actions{position:relative;display:flex;gap:8px;flex-wrap:wrap}
 .hero-cta{flex:1;min-width:150px}
 .hero-alt{flex:0 0 auto}
@@ -429,9 +397,9 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .num.neg{color:var(--accent-ink)}
 
 .reward-card{position:relative;overflow:hidden}
-.reward-card.ready{border-color:var(--accent-line);background:var(--surface)}
+.reward-card.ready{border-color:var(--accent-line);background:linear-gradient(150deg,rgba(200,94,44,.07),transparent 60%),var(--surface)}
 .reward-card.ready::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(135deg, transparent 0 76%, var(--accent-soft) 76% 100%)}
+  background:radial-gradient(50% 60% at 90% 0%,rgba(200,94,44,.16),transparent 70%)}
 .reward-spark{flex:0 0 auto;animation:sparkPulse 2.4s var(--ease) infinite}
 @keyframes sparkPulse{0%,100%{transform:scale(1);opacity:.85}50%{transform:scale(1.14);opacity:1}}
 
@@ -462,8 +430,7 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
   100%{transform:none;box-shadow:0 0 0 0 rgba(200,94,44,0)}}
 
 .eat-time{display:grid;gap:10px;padding:12px;border-radius:var(--r-md);
-  background:var(--surface-2);border:1px solid var(--line);margin-bottom:14px;position:relative;overflow:hidden}
-.eat-time::before{content:"";position:absolute;right:0;top:0;width:42px;height:42px;background:var(--accent-soft);clip-path:polygon(100% 0,100% 100%,0 0);pointer-events:none}
+  background:var(--surface-2);border:1px solid var(--line);margin-bottom:14px;position:relative}
 .eat-time-main{display:flex;align-items:center;gap:8px;min-width:0}
 .eat-time-main .label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .eat-time-value{font-family:var(--f-display);font-weight:700;font-size:15px;color:var(--ink);background:transparent;border:0;padding:0;min-width:0}
@@ -579,7 +546,7 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .wb-d{font-size:11px;color:var(--muted);font-weight:600}
 
 /* hero gets the badge treatment */
-.hero{border-radius:var(--r-lg);box-shadow:var(--shadow)}
+.hero{border-radius:var(--r-xl);box-shadow:var(--shadow)}
 .hero-title{font-size:26px;font-weight:800;letter-spacing:-.05em}
 .hero-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
 .hero-cta{border-radius:99px}
@@ -776,67 +743,71 @@ const ic=(n,s=20,w=1.7,c='currentColor')=>`<svg width="${s}" height="${s}" viewB
    eyes, oversized gentle hands. Three arcs read as breath + day progress.
    reaction: idle | wake | cheer | concern | rest
    =========================================================================== */
-const HEAD=`M143 31c32-5 55 15 57 42 2 28-22 45-50 45-29 0-49-19-49-43 0-25 17-40 42-44Z`;
-const HEAD_CHIP=`M178 28l20 16-14 17-15-18 9-15Z`;
-function mascotProgress(fallbackArcs=3){
-  const empty=[0,0,0].map((_,i)=>i<(fallbackArcs||0)?1:0);
-  try{
-    const d=typeof D==='function'?D():null;
-    if(!d) return empty;
-    const eaten=eatenMacros(), extra=d.extra||{};
-    const fuel=clamp(((eaten.kcal||0)+(extra.kcal||0))/(S.prefs.kcal||2000),0,1);
-    const protein=clamp(((eaten.p||0)+(extra.p||0))/(S.prefs.protein||170),0,1);
-    const rows=activeRows();
-    const resolved=rows.length?rows.filter(r=>r.status!=='pending').length/rows.length:0;
-    return [fuel,protein,resolved].map((v,i)=>i<(fallbackArcs||0)?v:0);
-  }catch(e){ return empty; }
-}
+const C={
+  clay:'#B4602F', clayDk:'#8E4A22', clayLt:'#CE7643',
+  cream:'#F0EAE0', cream2:'#E1D8C9', creamDk:'#D2C7B4',
+  panel:'#4A443B', accent:'#C85E2C', arcOff:'#E6DED2'
+};
+const HEAD=`M142 32c31-4 54 16 56 41 2 27-21 43-48 43-28 0-47-18-47-41 0-25 16-40 39-43Z`;
+const HEAD_CHIP=`M177 29l19 15-13 16-14-17 8-14Z`;
 function Mascot(o={}){
   const {w=200, reaction='idle', arcs=3, breathing=true, ground=true}=o;
-  const p=Array.isArray(o.progress)?o.progress:mascotProgress(arcs);
+  const arcOn=i=>i<arcs?C.accent:C.arcOff;
   const live=breathing?'live':'';
   return `<svg class="mascot m-${reaction}" width="${w}" viewBox="0 0 300 380" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Your wellness companion">
-  <g class="m-arc m-arc--fuel ${live}" style="--arc-p:${clamp(p[0]||0,0,1)}">
-    <path class="arc-bg" pathLength="1" d="M38 136A124 124 0 0 1 262 136"/>
-    <path class="arc-fg" pathLength="1" d="M38 136A124 124 0 0 1 262 136"/>
-  </g>
-  <g class="m-arc m-arc--protein ${live} a2" style="--arc-p:${clamp(p[1]||0,0,1)}">
-    <path class="arc-bg" pathLength="1" d="M28 222A108 108 0 0 1 38 158"/>
-    <path class="arc-fg" pathLength="1" d="M28 222A108 108 0 0 1 38 158"/>
-  </g>
-  <g class="m-arc m-arc--discipline ${live} a3" style="--arc-p:${clamp(p[2]||0,0,1)}">
-    <path class="arc-bg" pathLength="1" d="M272 222A108 108 0 0 0 262 158"/>
-    <path class="arc-fg" pathLength="1" d="M272 222A108 108 0 0 0 262 158"/>
-  </g>
-  ${ground?`<ellipse class="m-ground" cx="150" cy="356" rx="76" ry="7"/>`:''}
+  <g class="m-arc ${live}"><path d="M36 138A124 124 0 0 1 264 138" stroke="${arcOn(0)}" stroke-width="12" stroke-linecap="round"/></g>
+  <g class="m-arc ${live} a2"><path d="M26 222A104 104 0 0 1 36 158" stroke="${arcOn(1)}" stroke-width="11" stroke-linecap="round"/></g>
+  <g class="m-arc ${live} a3"><path d="M274 210A104 104 0 0 0 266 150" stroke="${arcOn(2)}" stroke-width="11" stroke-linecap="round"/></g>
+  ${ground?`<ellipse cx="150" cy="358" rx="80" ry="8" fill="#17140F" opacity=".07"/>`:''}
   <g class="m-body">
-    <path class="m-leg m-leg-a" d="M112 236h34l-7 94c-.6 9-6 14-16 14s-16-5-15-14l4-94Z"/>
-    <path class="m-leg m-leg-b" d="M154 236h34l4 94c1 9-5 14-15 14s-15.4-5-16-14l-7-94Z"/>
-    <path class="m-foot" d="M96 330h44v14H90l6-14Z"/>
-    <path class="m-foot" d="M160 330h44l6 14h-50v-14Z"/>
-    <path class="m-torso" d="M150 122c-28 0-48 13-54 36l-12 62c-3 17 7 29 24 29h84c17 0 27-12 24-29l-12-62c-6-23-26-36-54-36Z"/>
-    <path class="m-sash" d="M98 150l100 44-5 18-96-44 1-18Z"/>
-    <path class="m-arm m-arm-a" d="M98 148c-16 9-24 22-27 39l-8 45c-2 10 5 17 15 17 9 0 15-6 17-16l12-69-9-16Z"/>
-    <path class="m-arm m-arm-b" d="M202 148c16 9 24 22 27 39l8 45c2 10-5 17-15 17-9 0-15-6-17-16l-12-69 9-16Z"/>
-    <path class="m-hand" d="M62 239c-15 0-25 10-25 25 0 18 12 31 30 31 15 0 26-9 26-24 0-20-11-32-31-32Z"/>
-    <path class="m-hand" d="M238 239c15 0 25 10 25 25 0 18-12 31-30 31-15 0-26-9-26-24 0-20 11-32 31-32Z"/>
-    <path class="m-neck" d="M130 105h40v24h-40z"/>
-    <path class="m-head" d="${HEAD}"/>
-    <path class="m-chip" d="${HEAD_CHIP}"/>
-    <path class="m-eye" d="M116 75l18-9 19 8-18 10-19-9Z"/>
-    <path class="m-eye" d="M165 74l19-8 18 9-19 9-18-10Z"/>
-    <path class="m-lid" d="M116 75l18-9 19 8-18 10-19-9Z"/>
-    <path class="m-lid" d="M165 74l19-8 18 9-19 9-18-10Z"/>
-    <path class="m-mouth" d="M139 98c8 5 22 5 30-1"/>
+    <!-- legs -->
+    <path d="M112 240h32l-5 90c0 9-6 14-16 14s-16-5-15-14l4-90Z" fill="${C.cream}"/>
+    <path d="M156 240h32l4 90c1 9-5 14-15 14s-16-5-16-14l-5-90Z" fill="${C.cream2}"/>
+    <path d="M113 288h29m17 0h29" stroke="${C.creamDk}" stroke-width="3" stroke-linecap="round"/>
+    <!-- shoes -->
+    <path d="M106 330h34v10c0 7-5 10-13 10H96c-7 0-9-5-6-10l5-7c2-2 6-3 11-3Z" fill="${C.cream}"/>
+    <path d="M194 330h-34v10c0 7 5 10 13 10h31c7 0 9-5 6-10l-5-7c-2-2-6-3-11-3Z" fill="${C.cream}"/>
+    <path d="M91 345h39v5H97c-7 0-9-2-6-5Zm118 0h-39v5h33c7 0 9-2 6-5Z" fill="${C.accent}"/>
+    <!-- torso -->
+    <path d="M150 124c-27 0-46 13-51 34l-11 60c-3 16 6 28 22 28h80c16 0 25-12 22-28l-11-60c-5-21-24-34-51-34Z" fill="${C.cream}"/>
+    <!-- wrap sash -->
+    <path d="M101 150c-4 4-7 9-8 15l84 41h20l3-14-99-42Z" fill="${C.cream2}"/>
+    <path d="M104 154 196 194" stroke="${C.accent}" stroke-width="2.8" stroke-linecap="round"/>
+    <!-- shoulder panel + belt -->
+    <path d="M164 130c15 5 26 14 29 27l4 21-35-26 2-22Z" fill="${C.panel}"/>
+    <rect x="92" y="206" width="116" height="17" rx="8" fill="${C.panel}"/>
+    <rect x="136" y="206" width="28" height="17" rx="8" fill="${C.accent}"/>
+    <!-- arms -->
+    <path d="M97 146c-14 7-22 19-25 34l-8 48c-2 10 5 17 14 17s16-6 17-16l12-68-10-15Z" fill="${C.clay}"/>
+    <path d="M203 146c14 7 22 19 25 34l8 48c2 10-5 17-14 17s-16-6-17-16l-12-68 10-15Z" fill="${C.clay}"/>
+    <path d="M69 212h24m114 0h24" stroke="${C.cream}" stroke-width="10" stroke-linecap="round"/>
+    <!-- oversized gentle hands, open and relaxed -->
+    <path d="M64 240c-14-2-24 7-26 21-2 18 8 34 26 37 16 3 28-6 30-20 2-10-1-18-5-25-5-9-13-12-25-13Z" fill="${C.clay}"/>
+    <path d="M236 240c14-2 24 7 26 21 2 18-8 34-26 37-16 3-28-6-30-20-2-10 1-18 5-25 5-9 13-12 25-13Z" fill="${C.clay}"/>
+    <path d="M50 266C57 262 66 261 76 263M52 280C59 276 67 275 76 277M250 266C243 262 234 261 224 263M248 280C241 276 233 275 224 277" stroke="${C.clayDk}" stroke-width="2.6" stroke-linecap="round" opacity=".42"/>
+    <!-- neck -->
+    <path d="M130 106h40v24h-40z" fill="${C.clayDk}"/>
+    <path d="M120 126c10-7 50-7 60 0-7 7-53 7-60 0Z" fill="${C.cream2}"/>
+    <!-- head: carved ember, deliberately asymmetric -->
+    <path d="${HEAD}" fill="${C.clay}"/>
+    <path d="${HEAD_CHIP}" fill="${C.clayDk}"/>
+    <path d="M172 38l-12 28 10 8-14 38" stroke="${C.clayLt}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    <!-- recessed eyes: socket, warm inset, no glow -->
+    <ellipse cx="130" cy="78" rx="15" ry="10" fill="${C.clayDk}" transform="rotate(-7 130 78)"/>
+    <ellipse cx="173" cy="75" rx="15" ry="10" fill="${C.clayDk}" transform="rotate(7 173 75)"/>
+    <ellipse cx="131" cy="79" rx="10" ry="5.4" fill="#E9A468" transform="rotate(-7 131 79)"/>
+    <ellipse cx="172" cy="76" rx="10" ry="5.4" fill="#E9A468" transform="rotate(7 172 76)"/>
+    <g class="m-lid"><ellipse cx="131" cy="79" rx="10.6" ry="6" fill="${C.clayDk}" transform="rotate(-7 131 79)"/></g>
+    <g class="m-lid"><ellipse cx="172" cy="76" rx="10.6" ry="6" fill="${C.clayDk}" transform="rotate(7 172 76)"/></g>
+    <path d="M140 97c8 5 21 5 28-1" stroke="${C.clayDk}" stroke-width="2.8" stroke-linecap="round" fill="none"/>
   </g>
 </svg>`;
 }
 function MascotMark(size=30){
   return `<svg width="${size}" height="${size}" viewBox="88 22 122 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="${HEAD}" fill="var(--mascot-body)" stroke="var(--mascot-line)" stroke-width="1.7"/>
-    <path d="${HEAD_CHIP}" fill="var(--mascot-panel)"/>
-    <path d="M116 75l18-9 19 8-18 10-19-9Z" fill="var(--mascot-eye)" stroke="var(--mascot-line)" stroke-width="1.7"/>
-    <path d="M165 74l19-8 18 9-19 9-18-10Z" fill="var(--mascot-eye)" stroke="var(--mascot-line)" stroke-width="1.7"/>
+    <path d="${HEAD}" fill="${C.clay}"/><path d="${HEAD_CHIP}" fill="${C.clayDk}"/>
+    <ellipse cx="130" cy="78" rx="14" ry="9" fill="${C.clayDk}"/><ellipse cx="173" cy="75" rx="14" ry="9" fill="${C.clayDk}"/>
+    <ellipse cx="131" cy="79" rx="9" ry="4.8" fill="#E9A468"/><ellipse cx="172" cy="76" rx="9" ry="4.8" fill="#E9A468"/>
   </svg>`;
 }
 /* ===========================================================================
@@ -2633,7 +2604,7 @@ function HeroCard(){
     return clamp((now()-from)/Math.max(1,nx.at-from)*100,0,100);
   })();
   if(st==='daydone') return '';
-  return `<section class="hero geo-panel hero-${st}" data-hero>
+  return `<section class="hero hero-${st}" data-hero>
     <div class="hero-glow"></div>
     <div class="hero-top">
       <span class="hero-eyebrow">${copy.eyebrow}</span>
@@ -2653,7 +2624,7 @@ function HeroCard(){
           ${ic('swap',13)} Replaced ${esc(meal.replacedFrom.toLowerCase())} — see why</button>`:''}
       </div>
     </div>
-    <div class="hero-rail geo-rail"><i style="--p:${pctToNext/100}"></i></div>
+    <div class="hero-rail"><i style="transform:scaleX(${pctToNext/100})"></i></div>
     <div class="hero-actions">
       <button class="btn primary hero-cta" data-act="ate" data-v="${meal.id}" ${st==='soon'||st==='waiting'||st==='morning'?'':''}>
         ${ic('check',18)} I ate this</button>
@@ -2732,7 +2703,7 @@ function WeekBars(){
 function PointsStrip(){
   const pos=Points.positive(), neg=Points.negative(), net=pos+neg;
   const feed=(S.ui.pointsFeed||[]).slice(-1)[0];
-  return `<section class="card pad-s points-strip geo-panel" data-act="go" data-v="points" role="button" tabindex="0">
+  return `<section class="card pad-s points-strip" data-act="go" data-v="points" role="button" tabindex="0">
     <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:9px">
       <div class="tile tile--lime"><div class="tile-n">+${pos}</div><div class="tile-l">Earned</div></div>
       <div class="tile tile--peach"><div class="tile-n">${neg}</div><div class="tile-l">Deducted</div></div>

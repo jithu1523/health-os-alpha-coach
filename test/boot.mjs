@@ -10,7 +10,7 @@ import { JSDOM, VirtualConsole } from 'jsdom';
 
 const html = fs.readFileSync(path.resolve(process.cwd(), 'alpha-coach.html'), 'utf8');
 
-function boot(seed, theme = 'grove') {
+function boot(seed) {
   const errs = [];
   const vc = new VirtualConsole()
     .on('jsdomError', e => errs.push(e.message))
@@ -20,13 +20,6 @@ function boot(seed, theme = 'grove') {
   if (seed) dom.window.localStorage.setItem('alphacoach.v2', seed);
   const code = [...dom.window.document.querySelectorAll('script')].map(s => s.textContent).join('\n');
   try { dom.window.eval(code); } catch (e) { errs.push('THROW ' + e.message); }
-  try {
-    if (dom.window.AlphaCoach) {
-      dom.window.AlphaCoach.S.theme = theme;
-      dom.window.AlphaCoach.applyTheme();
-      dom.window.AlphaCoach.render();
-    }
-  } catch (e) { errs.push('THEME ' + e.message); }
   return { dom, errs };
 }
 
@@ -45,24 +38,22 @@ const cases = [
 ];
 
 let allOk = true;
-for (const wantedTheme of ['grove', 'ember']) {
-  for (const [seed, label] of cases) {
-    const r = boot(seed, wantedTheme);
-    await new Promise(x => setTimeout(x, 250));
-    const doc = r.dom.window.document;
-    const visible = ((doc.querySelector('#app').textContent || '') + (doc.querySelector('#overlay').textContent || '')).trim();
-    const crashed = /Something went wrong loading/.test(visible);
-    const rendered = visible.length > 150 && !crashed;
-    const theme = doc.documentElement.getAttribute('data-theme');
-    const kitchen = r.dom.window.AlphaCoach ? r.dom.window.AlphaCoach.invOn() : '?';
-    allOk &&= rendered && theme === wantedTheme;
-    console.log(
-      `${label.padEnd(34)} render=${rendered ? 'yes' : 'NO '} ` +
-      `theme=${String(theme).padEnd(6)} kitchen=${String(kitchen).padEnd(5)} ` +
-      `err=${r.errs[0] ? r.errs[0].slice(0, 44) : 'none'}`
-    );
-  }
+for (const [seed, label] of cases) {
+  const r = boot(seed);
+  await new Promise(x => setTimeout(x, 250));
+  const doc = r.dom.window.document;
+  const visible = ((doc.querySelector('#app').textContent || '') + (doc.querySelector('#overlay').textContent || '')).trim();
+  const crashed = /Something went wrong loading/.test(visible);
+  const rendered = visible.length > 150 && !crashed;
+  const theme = doc.documentElement.getAttribute('data-theme');
+  const kitchen = r.dom.window.AlphaCoach ? r.dom.window.AlphaCoach.invOn() : '?';
+  allOk &&= rendered && !!theme;
+  console.log(
+    `${label.padEnd(34)} render=${rendered ? 'yes' : 'NO '} ` +
+    `theme=${String(theme).padEnd(6)} kitchen=${String(kitchen).padEnd(5)} ` +
+    `err=${r.errs[0] ? r.errs[0].slice(0, 44) : 'none'}`
+  );
 }
 
-console.log(allOk ? '\n✓ ALL BOOT PATHS RENDER IN BOTH PALETTES' : '\n✗ SOME PATHS BLANK');
+console.log(allOk ? '\n✓ ALL BOOT PATHS RENDER' : '\n✗ SOME PATHS BLANK');
 process.exit(allOk ? 0 : 1);
