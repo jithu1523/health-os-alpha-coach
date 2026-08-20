@@ -29,6 +29,7 @@ ok('boots without errors', errs.length === 0, errs[0]);
 /* --------------------------------------------------------------- store seam */
 ok('store seam uses the local adapter by default', A().Store.activeName === 'local', A().Store.activeName);
 ok('store exposes load/save/subscribe', ['load', 'save', 'subscribe'].every(k => typeof A().Store[k] === 'function'));
+ok('store exposes local photo blob methods', ['saveBlob', 'loadBlob', 'clearBlob'].every(k => typeof A().Store[k] === 'function'));
 ok('supabase adapter is dormant and offline', A().Store.adapters.supabase.enabled === false && A().Store.adapters.supabase.network === false);
 {
   const k = 'alphacoach.test.store';
@@ -40,6 +41,14 @@ ok('supabase adapter is dormant and offline', A().Store.adapters.supabase.enable
   ok('local adapter notifies subscribers', seen);
   await A().Store.clear(k);
   off();
+}
+{
+  const k = 'alphacoach.test.photo';
+  await A().Store.saveBlob(k, new W.Blob(['photo-bytes'], { type: 'image/jpeg' }), { source: 'test' });
+  const rec = await A().Store.loadBlob(k);
+  ok('local adapter saves photo blobs through Store', rec && rec.meta && rec.meta.source === 'test', JSON.stringify(rec && rec.meta));
+  await A().Store.clearBlob(k);
+  ok('local adapter clears photo blobs through Store', await A().Store.loadBlob(k) === null);
 }
 {
   const sql = fs.readFileSync(path.resolve(process.cwd(), 'office/supabase/migrations/0001_init.sql'), 'utf8');
@@ -64,6 +73,23 @@ ok('food lookup off leaves the existing dish estimator unchanged', A().estimateD
   const miss = A().estimateKcal({ source: 'manual', key: 'moon soup' });
   ok('food lookup miss does not fabricate calories', miss.kcal === null && miss.needsConfirmation === true);
   ok('food lookup carries ODbL attribution', /Open Food Facts/.test(manual.attribution));
+}
+
+/* ----------------------------------------------------------- photo logging */
+ok('photo logging ships off by default', A().photoLogOn() === false);
+ok('photo logging uses the confirmed Food-101 ONNX model metadata',
+  A().PHOTO_MODEL.repo === 'onnx-community/swin-finetuned-food101-ONNX' && A().PHOTO_MODEL.dtype === 'q8');
+{
+  const photo = A().photoEstimateFromLabel('apple_pie', 0.92, 1);
+  ok('photo label estimate is still an estimate with confidence',
+    photo.isEstimate === true && photo.source === 'photo' && photo.kcal === 296 && photo.confidence <= 0.8 && photo.needsConfirmation === false);
+  const low = A().photoEstimateFromLabel('apple_pie', 0.35, 1);
+  ok('low-confidence photo labels ask before logging', low.needsConfirmation === true && low.kcal === 296);
+  const unmapped = A().photoEstimateFromLabel('baby_back_ribs', 0.91, 1);
+  ok('unmapped photo labels do not fabricate calories', unmapped.kcal === null && unmapped.needsConfirmation === true);
+  W.AlphaCoachPhotoMock = async () => [{ label: 'apple_pie', score: 0.92 }, { label: 'baby_back_ribs', score: 0.81 }];
+  const top = await A().PhotoClassifier.classify('data:image/png;base64,AA', { topk: 2 });
+  ok('photo classifier returns top-k labels from the on-device seam', top.length === 2 && top[0].label === 'apple_pie' && top[0].score === 0.92);
 }
 
 /* ---------------------------------------------------------------- onboarding */
@@ -108,6 +134,24 @@ ok('no phantom shortages with the kitchen off', A().shortages().length === 0);
   ok('food lookup log still awards through the normal honest-log code',
     A().S.points.ledger.slice(before).some(e => e.code === 'LOGGED_HONESTLY'));
   A().S.prefs.foodLookup = false;
+}
+{
+  A().S.prefs.photoLogging = true;
+  A().S.ui.estPhoto = { id: 'photo_test', preview: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==', source: 'test' };
+  A().S.ui.photoLog = { status: 'ready', photo: { id: 'photo_test' }, top: [{ label: 'apple_pie', name: 'Apple Pie', score: 0.92 }], result: null, manualKey: '', portion: 1, error: null };
+  const before = A().S.points.ledger.length;
+  A().ACT.openEstimate(); await wait(180);
+  ok('photo logging UI is explicit about on-device classification',
+    !!doc.querySelector('[data-act="photoPickLabel"]') && /onnx-community\/swin-finetuned-food101-ONNX/.test(txt()));
+  A().ACT.photoPickLabel('apple_pie|0.92'); await wait(80);
+  A().ACT.photoUseEstimate(); await wait(80);
+  ok('photo estimate fills the existing eating-out modal', /Using a food lookup estimate/.test(txt()) && /Apple pie/.test(txt()));
+  click(doc.querySelector('[data-act="saveEstimate"]')); await wait(420);
+  const extra = d().extra.items[d().extra.items.length - 1];
+  ok('photo estimate logs through the existing extra-meal path', extra.name === 'Apple pie (1 slice)' && extra.kcal === 296);
+  ok('photo estimate still awards through the normal honest-log code',
+    A().S.points.ledger.slice(before).some(e => e.code === 'LOGGED_HONESTLY'));
+  A().S.prefs.photoLogging = false;
 }
 
 /* --------------------------------------------------------- sequential locking */

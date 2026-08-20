@@ -1080,6 +1080,68 @@ function foodEstimateShape(r){
   return {name:r.matchedName||r.matchedKey||'Food lookup',kcal:r.kcal||0,p:r.protein_g||0,c:r.carbs_g||0,f:r.fat_g||0,result:r};
 }
 function foodLookupOn(){return !!S.prefs.foodLookup;}
+const PHOTO_MODEL={
+  repo:'onnx-community/swin-finetuned-food101-ONNX',
+  revision:'main',
+  dtype:'q8',
+  sizeMb:93.3,
+  importUrl:'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1'
+};
+const PHOTO_CONFIRM_THRESHOLD=0.55;
+function defaultPhotoLog(){return {status:'idle',photo:null,top:[],result:null,manualKey:'',portion:1,error:null};}
+function photoLogOn(){return !!S.prefs.photoLogging;}
+function normalizePhotoLabel(label){
+  return normalizeFoodKey(String(label||'').replace(/[_-]+/g,' ')).replace(/\s+/g,'_');
+}
+function prettyPhotoLabel(label){
+  return String(label||'').replace(/[_-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+}
+function photoPreview(photo){
+  if(!photo) return '';
+  return typeof photo==='string'?photo:(photo.preview||'');
+}
+function photoEstimateFromLabel(label,score=0,portion=1){
+  const normalized=normalizePhotoLabel(label);
+  const modelConfidence=clamp(Number.isFinite(+score)?+score:0,0,1);
+  const est=estimateKcal({source:'label',key:normalized,portion});
+  const confidence=est.kcal==null?modelConfidence:round2(Math.min(est.confidence||0,modelConfidence));
+  const needsConfirmation=est.kcal==null||confidence<PHOTO_CONFIRM_THRESHOLD||est.needsConfirmation;
+  return {...est,source:'photo',photoSource:'Food-101',label:normalized,labelName:prettyPhotoLabel(normalized),
+    labelConfidence:modelConfidence,confidence,needsConfirmation,
+    note:est.kcal==null
+      ?`Photo label "${prettyPhotoLabel(normalized)}" is not mapped to calories yet. Ask for the food name before logging.`
+      :`Photo label "${prettyPhotoLabel(normalized)}" matched the bundled kcal table. Estimate only.`};
+}
+function shapePhotoOutputs(raw){
+  const arr=Array.isArray(raw)?raw:(raw&&Array.isArray(raw.output)?raw.output:[]);
+  return arr.map(x=>({
+    label:normalizePhotoLabel(x.label||x.className||x.class||x.name),
+    name:prettyPhotoLabel(x.label||x.className||x.class||x.name),
+    score:clamp(Number.isFinite(+x.score)?+x.score:(Number.isFinite(+x.confidence)?+x.confidence:0),0,1)
+  })).filter(x=>x.label).sort((a,b)=>b.score-a.score).slice(0,5);
+}
+const PhotoClassifier={
+  pipe:null, loading:null,
+  async load(){
+    if(this.pipe) return this.pipe;
+    if(window.AlphaCoachPhotoMock){ this.pipe=window.AlphaCoachPhotoMock; return this.pipe; }
+    if(!this.loading){
+      this.loading=(async()=>{
+        const mod=await import(PHOTO_MODEL.importUrl);
+        if(mod.env){ mod.env.allowLocalModels=false; mod.env.useBrowserCache=true; }
+        const pipe=await mod.pipeline('image-classification',PHOTO_MODEL.repo,{revision:PHOTO_MODEL.revision,dtype:PHOTO_MODEL.dtype});
+        return pipe;
+      })().catch(e=>{ this.loading=null; throw e; });
+    }
+    this.pipe=await this.loading;
+    return this.pipe;
+  },
+  async classify(input,{topk=5}={}){
+    const pipe=await this.load();
+    const raw=typeof pipe==='function'?await pipe(input,{topk,top_k:topk}):await pipe.classify(input,{topk});
+    return shapePhotoOutputs(raw);
+  }
+};
 
 const DEFAULT_SUPP_PLAN=[
   {ref:'whey',dose:30,when:'Post-workout'},
@@ -1431,6 +1493,28 @@ const SKIP_REASONS=['Not hungry','No time','Ate out instead','Feeling unwell','R
    =========================================================================== */
 const STORE_KEY='alphacoach.v2';
 const STORE_BACKEND='local'; // Supabase stays dormant until the human says to connect a server.
+const BLOB_DB='alphacoach.local.blobs';
+const BLOB_STORE='mealPhotos';
+const BlobMemory=new Map();
+function openBlobDb(){
+  if(typeof indexedDB==='undefined') return Promise.reject(new Error('IndexedDB unavailable'));
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(BLOB_DB,1);
+    req.onupgradeneeded=()=>{ const db=req.result; if(!db.objectStoreNames.contains(BLOB_STORE)) db.createObjectStore(BLOB_STORE,{keyPath:'key'}); };
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error||new Error('IndexedDB failed'));
+  });
+}
+function blobTx(mode,fn){
+  return openBlobDb().then(db=>new Promise((resolve,reject)=>{
+    const tx=db.transaction(BLOB_STORE,mode), store=tx.objectStore(BLOB_STORE);
+    let value=null;
+    tx.oncomplete=()=>{ try{db.close();}catch(e){} resolve(value); };
+    tx.onerror=()=>{ try{db.close();}catch(e){} reject(tx.error||new Error('IndexedDB transaction failed')); };
+    const req=fn(store);
+    if(req) req.onsuccess=()=>{ value=req.result; };
+  }));
+}
 function createLocalAdapter(){
   const subs=new Map();
   const notify=(key,val)=>{
@@ -1443,6 +1527,19 @@ function createLocalAdapter(){
     load(key){return Promise.resolve(this.loadSnapshot(key));},
     save(key,obj){try{localStorage.setItem(key,JSON.stringify(obj));notify(key,obj);}catch(e){} return Promise.resolve();},
     clear(key){try{localStorage.removeItem(key);notify(key,null);}catch(e){} return Promise.resolve();},
+    saveBlob(key,blob,meta={}){
+      const rec={key,blob,meta,savedAt:Date.now()};
+      if(typeof indexedDB==='undefined'){ BlobMemory.set(key,rec); return Promise.resolve({...rec,backend:'memory'}); }
+      return blobTx('readwrite',store=>store.put(rec)).then(()=>({...rec,backend:'indexedDB'}));
+    },
+    loadBlob(key){
+      if(typeof indexedDB==='undefined') return Promise.resolve(BlobMemory.get(key)||null);
+      return blobTx('readonly',store=>store.get(key)).catch(()=>null);
+    },
+    clearBlob(key){
+      if(typeof indexedDB==='undefined'){ BlobMemory.delete(key); return Promise.resolve(); }
+      return blobTx('readwrite',store=>store.delete(key)).then(()=>undefined);
+    },
     subscribe(key,cb){
       const list=subs.get(key)||[];
       list.push(cb); subs.set(key,list);
@@ -1460,6 +1557,9 @@ function createSupabaseAdapter(){
     load:noop,
     save:()=>Promise.resolve(),
     clear:()=>Promise.resolve(),
+    saveBlob:()=>Promise.resolve({stored:false,backend:'supabase-dormant'}),
+    loadBlob:noop,
+    clearBlob:()=>Promise.resolve(),
     subscribe(){return ()=>{};}
   };
 }
@@ -1472,6 +1572,9 @@ const Store={
   load(key=this.key){return this.adapter.load(key);},
   save(key=this.key,obj=S){return this.adapter.save(key,obj);},
   clear(key=this.key){return this.adapter.clear(key);},
+  saveBlob(key,blob,meta){return this.adapter.saveBlob(key,blob,meta);},
+  loadBlob(key){return this.adapter.loadBlob(key);},
+  clearBlob(key){return this.adapter.clearBlob(key);},
   subscribe(key=this.key,cb){return this.adapter.subscribe(key,cb);}
 };
 window.AlphaStore=Store;
@@ -1484,14 +1587,15 @@ function defaultState(){
     activeDay:null, days:{}, history:[],
     prefs:{goal:'cut',kcal:2000,protein:170,carbs:180,fat:60,diet:'none',allergies:[],like:[],dislike:[],refuse:[],
            cuisines:['Indian'],cooking:'basic',equipment:['Hob','Fridge'],prepTime:20,budget:'mid',
-           wake:'07:00',sleep:'23:00',flexible:false,foodLookup:false},
+           wake:'07:00',sleep:'23:00',flexible:false,foodLookup:false,photoLogging:false},
     suppPlan:DEFAULT_SUPP_PLAN.map(s=>({...s,id:uid(),source:'user'})),
     inv:{items:{},last:null,mismatch:[],enabled:false},
     points:blankPoints(), dislikedMeals:[], weights:[], sleepLog:[], notify:false, theme:'grove',
     shop:{}, swaps:{}, jugaad:null,
     workout:null, chat:[],
     ui:{screen:'today', modal:null, modalArg:null, celebrate:null, online:true, invTab:'need', shopTab:'urgent',
-        eatTimeSeen:false, eatTimeFull:false, foodLookup:{mode:'manual',key:'',portion:1,result:null}, estFoodResult:null}
+        eatTimeSeen:false, eatTimeFull:false, foodLookup:{mode:'manual',key:'',portion:1,result:null},
+        photoLog:defaultPhotoLog(), estFoodResult:null}
   };
 }
 let S=Store.loadSnapshot(Store.key)||defaultState();
@@ -1535,6 +1639,9 @@ const STATE_VERSION=3;
   S.obStep=Number.isInteger(S.obStep)?S.obStep:0;
   S.onboarded=!!S.onboarded;
   S.ui=Object.assign(d.ui,S.ui||{},{modal:null,modalArg:null,celebrate:null});
+  S.ui.photoLog=Object.assign(defaultPhotoLog(),S.ui.photoLog||{});
+  if(!Array.isArray(S.ui.photoLog.top)) S.ui.photoLog.top=[];
+  if(typeof S.ui.photoLog.portion!=='number'||S.ui.photoLog.portion<=0) S.ui.photoLog.portion=1;
   if(S.ui.screen&&!['today','prep','inventory','shop','jugaad','points','prefs','stack','train','progress','coach','settings'].includes(S.ui.screen)) S.ui.screen='today';
   S.version=STATE_VERSION;
 })();
@@ -3586,6 +3693,22 @@ function ScreenSettings(){
       <p class="talk" style="font-size:12.5px;color:var(--faint);margin-top:8px">Open Food Facts data is shown with attribution. Low-confidence matches ask you to confirm before logging.</p>`:''}
     </section>
     <section class="card">
+      <div class="spread" style="gap:12px;align-items:flex-start">
+        <div style="min-width:0">
+          <div style="font-weight:600;font-size:14px">Photo logging</div>
+          <p class="talk" style="font-size:13px;color:var(--muted);margin-top:4px">
+            ${photoLogOn()?`On — food photos are classified on this device. First use downloads the ${PHOTO_MODEL.sizeMb} MB q8 Food-101 model and caches it locally.`
+                          :'Off — photos do not run a model. Existing dish logging stays unchanged.'}</p>
+        </div>
+        <button class="btn sm ${photoLogOn()?'':'primary'}" data-act="photoLoggingToggle">${photoLogOn()?'Turn off':'Turn on'}</button>
+      </div>
+      ${photoLogOn()?`<div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
+        <button class="btn sm primary" data-act="openEstimate">${ic('sparkleIcon',14)} Add food photo</button>
+        <span class="tag">On device</span><span class="tag">Estimate only</span>
+      </div>
+      <p class="talk" style="font-size:12.5px;color:var(--faint);margin-top:8px">Model: ${esc(PHOTO_MODEL.repo)} (${PHOTO_MODEL.dtype}, Apache-2.0). Images stay in local IndexedDB; low-confidence or unmapped labels ask before logging.</p>`:''}
+    </section>
+    <section class="card">
       <div class="label" style="margin-bottom:10px">Look</div>
       <div class="row" style="gap:8px;flex-wrap:wrap">
         ${[['grove','Grove'],['ember','Ember']].map(([v,l])=>
@@ -4371,21 +4494,43 @@ function Overlay(){
       const e=lookup||estimateDish(sel,portion);
       const target=S.ui.estTarget;      // a meal id, or null for "extra"
       const row=target?activeRows().find(r=>r.meal.id===target):null;
-      const shot=S.ui.estPhoto;
+      const shot=S.ui.estPhoto, preview=photoPreview(shot), photo=S.ui.photoLog||defaultPhotoLog();
+      const top=Array.isArray(photo.top)?photo.top:[];
+      const photoPanel=photoLogOn()?`<div class="banner" style="margin:12px 0 0">${ic('sparkleIcon',17,1.7,'var(--accent)')}
+          <div style="flex:1"><p>Photo logging is on. The image stays on this device and the model runs in your browser.</p>
+          <p class="meta" style="margin-top:4px">Model: ${esc(PHOTO_MODEL.repo)} (${PHOTO_MODEL.dtype}, cached after first use).</p></div></div>
+        ${photo.status==='loading'?`<div class="banner" style="margin-top:10px">${ic('timer',17,1.7,'var(--accent)')}<p>Classifying on this device. First run may download ${PHOTO_MODEL.sizeMb} MB.</p></div>`:''}
+        ${photo.error?`<div class="banner warn" style="margin-top:10px">${ic('alert',17,1.7,'var(--warn)')}<p>${esc(photo.error)}</p></div>`:''}
+        ${top.length?`<div class="label" style="margin:14px 0 8px">Photo suggestions</div>
+          <div class="row" style="gap:7px;flex-wrap:wrap">
+            ${top.map(x=>`<button class="chip" data-act="photoPickLabel" data-v="${esc(x.label)}|${x.score}" aria-pressed="${photo.result&&photo.result.label===x.label}">${esc(x.name)} · ${Math.round(x.score*100)}%</button>`).join('')}
+          </div>`:''}
+        ${photo.result?`${photo.result.kcal==null?`<div class="banner warn" style="margin-top:10px">${ic('alert',17,1.7,'var(--warn)')}<p>${esc(photo.result.labelName)} is not mapped to calories yet. Type what you ate before logging; I am not inventing a number.</p></div>`:
+          photo.result.needsConfirmation?`<div class="banner warn" style="margin-top:10px">${ic('alert',17,1.7,'var(--warn)')}<p>Possible photo match: ${esc(photo.result.matchedName||photo.result.labelName)} at ${Math.round(photo.result.labelConfidence*100)}% model confidence. Confirm with a clearer food name before logging.</p></div>`:
+          `<div class="banner" style="margin-top:10px">${ic('check',17,1.7,'var(--ok)')}<div style="flex:1"><p>Photo estimate ready for <b>${esc(photo.result.matchedName||photo.result.labelName)}</b>.</p><button class="btn xs ghost" style="margin-top:8px" data-act="photoUseEstimate">Use this estimate</button></div></div>`}`:''}
+        <div class="grid g2" style="gap:0 12px;margin-top:12px">
+          <label class="field"><span>Food name if the label is wrong</span><input class="input" id="photoManualKey" data-keep="photoManualKey" value="${esc(photo.manualKey||'')}" placeholder="samosa, dal, rice bowl"></label>
+          <label class="field"><span>Portion multiplier</span><input class="input" id="photoPortion" data-keep="photoPortion" type="number" step="0.1" min="0.1" value="${esc(photo.portion||1)}"></label>
+        </div>
+        <button class="btn block" data-act="photoManualEstimate">Estimate typed food</button>`:'';
       return `<div class="modal-h"><div><h2 style="font-size:19px">What did you eat?</h2>
         <p class="meta" style="margin-top:4px">${row?`Instead of ${esc(row.meal.name.toLowerCase())}`:'Something outside the plan'}</p></div>
         <button class="modal-x" data-act="close">${ic('x',16)}</button></div>
 
         <div class="estshot">
-          ${shot?`<img src="${shot}" alt="Your meal" class="estimg">`:`
+          ${preview?`<img src="${esc(preview)}" alt="Your meal" class="estimg">`:`
             <label class="estdrop">
               <input type="file" accept="image/*" capture="environment" data-photo="est" hidden>
               ${ic('sparkleIcon',22,1.7,'var(--accent)')}
               <span>Add a photo</span>
-              <em>${AlphaAPI.base?'The vision model will read the plate':'Stored now, read automatically once the model is connected'}</em>
+              <em>${photoLogOn()?'Stored locally. The Food-101 model reads it on this device.':(AlphaAPI.base?'The vision model will read the plate':'Stored now, read automatically once the model is connected')}</em>
             </label>`}
-          ${shot?`<button class="btn xs ghost" data-act="estClearPhoto">Remove photo</button>`:''}
+          ${preview?(photoLogOn()?`<div class="row" style="gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap">
+            ${photoLogOn()?`<button class="btn xs" data-act="photoClassifyRun">Classify on device</button>`:''}
+            <button class="btn xs ghost" data-act="estClearPhoto">Remove photo</button>
+          </div>`:`<button class="btn xs ghost" data-act="estClearPhoto">Remove photo</button>`):''}
         </div>
+        ${photoPanel}
 
         <div class="label" style="margin:16px 0 8px">Closest match</div>
         ${lookup?`<div class="banner" style="margin-bottom:12px">${ic('sparkleIcon',17,1.7,'var(--accent)')}
@@ -4802,7 +4947,76 @@ const ACT={
     S.ui.estPortion=S.ui.estPortion||'regular'; S.ui.estFoodResult=null; S.ui.modal='estimate'; render(); },
   estDish(v){ S.ui.estDish=v; renderOverlayOnly(); },
   estPortion(v){ S.ui.estPortion=v; renderOverlayOnly(); },
-  estClearPhoto(){ S.ui.estPhoto=null; renderOverlayOnly(); },
+  photoLoggingToggle(){
+    S.prefs.photoLogging=!photoLogOn();
+    if(!S.prefs.photoLogging){
+      S.ui.photoLog=defaultPhotoLog();
+      if(S.ui.estFoodResult&&S.ui.estFoodResult.source==='photo') S.ui.estFoodResult=null;
+    }
+    save(); render();
+    toast(S.prefs.photoLogging?'Photo logging on. Images stay on this device.':'Photo logging off. Existing logging stays unchanged.');
+  },
+  async photoClassifyRun(){
+    if(!photoLogOn()) return toast('Turn on photo logging in Settings first.');
+    const preview=photoPreview(S.ui.estPhoto);
+    if(!preview) return toast('Add a food photo first.');
+    const current=Object.assign(defaultPhotoLog(),S.ui.photoLog||{});
+    S.ui.photoLog=Object.assign(current,{status:'loading',error:null});
+    save(); renderOverlayOnly();
+    try{
+      const top=await PhotoClassifier.classify(preview,{topk:5});
+      const portion=($('#photoPortion')&&+$('#photoPortion').value)||current.portion||1;
+      const result=top[0]?photoEstimateFromLabel(top[0].label,top[0].score,portion):null;
+      S.ui.photoLog=Object.assign(defaultPhotoLog(),current,{status:'ready',top,result,portion,error:null});
+      if(!top.length) toast('I could not read a food label from that photo. Type what you ate below.');
+      else if(result&&result.kcal==null) toast(`${result.labelName} is not mapped to calories yet. Type the food before logging.`);
+      else if(result&&result.needsConfirmation) toast('The photo match is uncertain. Confirm the food before logging.');
+      else toast(`Photo suggests ${result.matchedName||result.labelName}. Confirm before logging.`);
+    }catch(e){
+      S.ui.photoLog=Object.assign(defaultPhotoLog(),current,{status:'error',error:'The on-device model could not load. Try again on Wi-Fi, or type the food below.'});
+      toast('The on-device model could not load. Type the food instead.');
+    }
+    save(); renderOverlayOnly();
+  },
+  photoPickLabel(v){
+    if(!photoLogOn()) return toast('Turn on photo logging in Settings first.');
+    const [label,scoreText]=String(v||'').split('|');
+    const current=Object.assign(defaultPhotoLog(),S.ui.photoLog||{});
+    const portion=($('#photoPortion')&&+$('#photoPortion').value)||current.portion||1;
+    const result=photoEstimateFromLabel(label,+scoreText||0,portion);
+    S.ui.photoLog=Object.assign(current,{status:'ready',result,portion,error:null});
+    if(result.kcal==null) toast(`${result.labelName} is not mapped to calories yet. Type the food before logging.`);
+    else if(result.needsConfirmation) toast('That photo match is too uncertain to log yet. Confirm with a food name.');
+    else toast(`${result.matchedName||result.labelName} selected. Confirm the estimate before logging.`);
+    save(); renderOverlayOnly();
+  },
+  photoManualEstimate(){
+    if(!photoLogOn()) return toast('Turn on photo logging in Settings first.');
+    const current=Object.assign(defaultPhotoLog(),S.ui.photoLog||{});
+    const key=($('#photoManualKey')&&$('#photoManualKey').value)||current.manualKey||'';
+    const portion=($('#photoPortion')&&+$('#photoPortion').value)||current.portion||1;
+    const raw=estimateKcal({source:'manual',key,portion});
+    const result={...raw,source:'photo',photoSource:'manual-confirmed',label:normalizePhotoLabel(key),labelName:key||'Typed food',labelConfidence:1};
+    S.ui.photoLog=Object.assign(current,{status:'ready',manualKey:key,portion,result,error:null});
+    if(result.kcal==null) toast('No calorie match for that food yet. Pick the closest dish below instead.');
+    else if(result.needsConfirmation) toast('That food match is uncertain. Use a clearer name before logging.');
+    else toast(`${result.matchedName||key} estimated. Confirm the time before logging.`);
+    save(); renderOverlayOnly();
+  },
+  photoUseEstimate(){
+    const result=(S.ui.photoLog||{}).result;
+    if(!result||result.kcal==null) return toast('No photo estimate to use yet.');
+    if(result.needsConfirmation) return toast('Confirm the food with a stronger match before logging.');
+    S.ui.estFoodResult=result;
+    save(); renderOverlayOnly();
+  },
+  estClearPhoto(){
+    const id=S.ui.estPhoto&&typeof S.ui.estPhoto==='object'?S.ui.estPhoto.id:null;
+    if(id) Store.clearBlob(id);
+    S.ui.estPhoto=null; S.ui.photoLog=defaultPhotoLog();
+    if(S.ui.estFoodResult&&S.ui.estFoodResult.source==='photo') S.ui.estFoodResult=null;
+    renderOverlayOnly();
+  },
   saveEstimate(v){
     const d=D(); if(!d) return toast('Start your day first.');
     const kcal=($('#estK')&&+$('#estK').value)||0;
@@ -4830,7 +5044,7 @@ const ACT={
       d.extra.items.push({name:label,kcal,p:prot,at:ateAt,ateAt,loggedAt,photo:S.ui.estPhoto||null});
       Points.award('LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} honestly`});
     }
-    S.ui.modal=null; S.ui.eatTime={}; S.ui.eatTimeFull=false; S.ui.estPhoto=null; S.ui.estFoodResult=null;
+    S.ui.modal=null; S.ui.eatTime={}; S.ui.eatTimeFull=false; S.ui.estPhoto=null; S.ui.photoLog=defaultPhotoLog(); S.ui.estFoodResult=null;
     save(); render();
     const nx=nextRow();
     toast(`${label} logged — ${kcal} kcal, ${prot} g protein.${nx?` Next is ${nx.meal.name.toLowerCase()} at ${fmtTime(nx.at)}.`:''}`);
@@ -5227,8 +5441,24 @@ document.addEventListener('change',async e=>{
     return;
   }
   if(t.dataset&&t.dataset.photo==='est'&&t.files&&t.files[0]){
+    const file=t.files[0];
     const fr=new FileReader();
     fr.onload=async()=>{
+      if(photoLogOn()){
+        const id=`photo_${uid()}`;
+        const meta={name:file.name||'food photo',type:file.type||'image/*',size:file.size||0,capturedAt:now(),source:'photo-logging'};
+        S.ui.estPhoto={id,preview:fr.result,...meta};
+        S.ui.photoLog=Object.assign(defaultPhotoLog(),S.ui.photoLog||{},{status:'stored',photo:{id,...meta},error:null});
+        renderOverlayOnly();
+        try{ await Store.saveBlob(id,file,meta); }
+        catch(e){
+          S.ui.photoLog.error='The photo could not be stored in IndexedDB. You can still type the food below.';
+          save(); renderOverlayOnly(); return;
+        }
+        save();
+        await ACT.photoClassifyRun();
+        return;
+      }
       S.ui.estPhoto=fr.result;
       renderOverlayOnly();
       const items=await AlphaAPI.recogniseMeal(fr.result);
@@ -5242,7 +5472,7 @@ document.addEventListener('change',async e=>{
         toast('Photo saved. No vision model connected yet — pick the closest dish below.');
       }
     };
-    fr.readAsDataURL(t.files[0]);
+    fr.readAsDataURL(file);
   }
 });
 document.addEventListener('keydown',e=>{
@@ -5267,6 +5497,7 @@ window.AlphaCoach={get S(){return S;},PLAN,CATALOG,MEAL_LIBRARY,JUGAAD,SURPRISE,
   eatenMacros,macrosFor,clampAte,autoResolveStale,checkStreakBreak,sessionKey,Notify,estimateMacros,
   DayRing,WeekBars,dayAxes,applyTheme,invOn,dayEndFor,sleepBound,estimateDish,DISHES,WeightTrend,
   FOOD_DB,FoodDb,estimateKcal,foodLookupOn,
+  PHOTO_MODEL,PhotoClassifier,photoLogOn,photoEstimateFromLabel,shapePhotoOutputs,
   resolveMeal,checkReplacements,applySwap,pickSurprise,surpriseStock,parseCommand,runOps,snapshotForAI,
   buildSchedule,stateOf,sched,nextRow,D,MEALS,mealItems,
   tx,setQty,undoLast,allTx,inv,invQty,ensureItem,servingText,fmtQty,toBase,fromBase,

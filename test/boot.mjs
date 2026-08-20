@@ -34,6 +34,7 @@ const cases = [
   [JSON.stringify({ name: 'J', onboarded: true, points: { ledger: 'not-an-array' }, weights: 'nope', prefs: null, obStep: 'x' }), 'wrong types throughout'],
   [JSON.stringify({ name: 'J', onboarded: true, prefs: { goal: 'cut', wake: '06:30' } }), 'legacy prefs, no flexible key'],
   [JSON.stringify({ name: 'J', onboarded: true, ui: { screen: 'today', modal: null } }), 'legacy ui, no eat-time flags'],
+  [JSON.stringify({ name: 'J', onboarded: true, prefs: { foodLookup: false }, ui: { screen: 'today', foodLookup: { mode: 'manual' } } }), 'legacy ui, no photo keys'],
   ['{}', 'empty object'],
   ['not json at all', 'corrupt json']
 ];
