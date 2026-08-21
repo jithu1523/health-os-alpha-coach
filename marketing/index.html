@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Alpha Coach by plutonaiii</title>
+  <meta name="description" content="Alpha Coach is the honest nutrition coach that plans around your real day, from wake-anchored meals to optional kitchen-aware planning.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://api.fontshare.com">
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --f-display: "Unbounded", ui-sans-serif, system-ui, sans-serif;
+      --f-talk: "Cabinet Grotesk", ui-rounded, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --f-ui: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --bg: #F2F4E8;
+      --bg-2: #E7EDD5;
+      --surface: #FFFFFF;
+      --surface-2: #F4F6EC;
+      --ink: #141A0F;
+      --ink-2: #3E463A;
+      --muted: #727A6B;
+      --line: rgba(20,26,15,.08);
+      --line-2: rgba(20,26,15,.14);
+      --accent: #2F5D34;
+      --accent-ink: #1D3D21;
+      --accent-soft: rgba(47,93,52,.08);
+      --accent-line: rgba(47,93,52,.20);
+      --lime: #C6E85C;
+      --lime-2: #DCF07F;
+      --lime-ink: #4A6410;
+      --ember: #C85E2C;
+      --ember-soft: rgba(200,94,44,.10);
+      --peach: #F8CDA0;
+      --mint: #C3E4CE;
+      --lilac: #DCD6F2;
+      --sky: #CFE3F0;
+      --shadow: 0 1px 2px rgba(20,26,15,.04), 0 10px 30px -14px rgba(20,26,15,.18);
+      --shadow-lg: 0 2px 6px rgba(20,26,15,.05), 0 24px 50px -20px rgba(20,26,15,.28);
+      --shadow-xl: 0 40px 120px -54px rgba(20,26,15,.46);
+      --ease: cubic-bezier(.22,.61,.28,1);
+      --ease-out: cubic-bezier(.16,1,.3,1);
+      --d-1: 140ms;
+      --d-2: 260ms;
+      --d-3: 380ms;
+      --max: 1180px;
+      --mascot-body: var(--peach);
+      --mascot-body-2: var(--surface-2);
+      --mascot-line: var(--accent-ink);
+      --mascot-panel: var(--ink-2);
+      --mascot-eye: var(--lime);
+      --mascot-arc-off: var(--line-2);
+      --mx: 0px;
+      --my: 0px;
+      --scroll: 0;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #10150E; --bg-2: #182113; --surface: #151D12; --surface-2: #20291C;
+        --ink: #F7F5E9; --ink-2: #CAD3BE; --muted: #9DA891;
+        --line: rgba(247,245,233,.10); --line-2: rgba(247,245,233,.18);
+        --accent: #95C987; --accent-ink: #DDEFD5; --accent-soft: rgba(149,201,135,.12); --accent-line: rgba(149,201,135,.24);
+        --lime: #D7F26B; --lime-2: #E2F88C; --lime-ink: #26380B;
+        --ember: #E07B48; --ember-soft: rgba(224,123,72,.13);
+        --peach: #F0C09B; --mint: #B8DDBF; --lilac: #CFC3EF; --sky: #B6D8EB;
+        --shadow: 0 1px 2px rgba(0,0,0,.18), 0 16px 40px -20px rgba(0,0,0,.72);
+        --shadow-lg: 0 2px 6px rgba(0,0,0,.22), 0 28px 70px -24px rgba(0,0,0,.82);
+        --shadow-xl: 0 42px 130px -42px rgba(0,0,0,.88);
+        --mascot-line: #704220; --mascot-panel: #3E463A; --mascot-arc-off: rgba(247,245,233,.20);
+      }
+    }
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg: #F2F4E8; --bg-2: #E7EDD5; --surface: #FFFFFF; --surface-2: #F4F6EC;
+      --ink: #141A0F; --ink-2: #3E463A; --muted: #727A6B;
+      --line: rgba(20,26,15,.08); --line-2: rgba(20,26,15,.14);
+      --accent: #2F5D34; --accent-ink: #1D3D21; --accent-soft: rgba(47,93,52,.08); --accent-line: rgba(47,93,52,.20);
+      --lime: #C6E85C; --lime-2: #DCF07F; --lime-ink: #4A6410;
+      --ember: #C85E2C; --ember-soft: rgba(200,94,44,.10);
+      --peach: #F8CDA0; --mint: #C3E4CE; --lilac: #DCD6F2; --sky: #CFE3F0;
+      --mascot-line: var(--accent-ink); --mascot-panel: var(--ink-2); --mascot-arc-off: var(--line-2);
+    }
+    html[data-theme="ember"] {
+      color-scheme: light;
+      --bg: #FAF7F2; --bg-2: #F2EDE4; --surface: #FFFFFF; --surface-2: #F4F0E9;
+      --ink: #17140F; --ink-2: #463F37; --muted: #7B7269;
+      --line: rgba(23,20,15,.09); --line-2: rgba(23,20,15,.16);
+      --accent: #C85E2C; --accent-ink: #8E4019; --accent-soft: rgba(200,94,44,.09); --accent-line: rgba(200,94,44,.24);
+      --lime: #E6C79B; --lime-2: #F0DCC0; --lime-ink: #8E4019;
+      --peach: #F0D5BC; --mint: #D8E2D2; --lilac: #E4DCD2; --sky: #DDE3E8; --ember: #C85E2C;
+      --mascot-line: var(--accent-ink); --mascot-panel: var(--ink-2); --mascot-arc-off: var(--line-2);
+    }
+    html[data-theme="dark"] {
+      color-scheme: dark;
+      --bg: #10150E; --bg-2: #182113; --surface: #151D12; --surface-2: #20291C;
+      --ink: #F7F5E9; --ink-2: #CAD3BE; --muted: #9DA891;
+      --line: rgba(247,245,233,.10); --line-2: rgba(247,245,233,.18);
+      --accent: #95C987; --accent-ink: #DDEFD5; --accent-soft: rgba(149,201,135,.12); --accent-line: rgba(149,201,135,.24);
+      --lime: #D7F26B; --lime-2: #E2F88C; --lime-ink: #26380B;
+      --ember: #E07B48; --ember-soft: rgba(224,123,72,.13);
+      --peach: #F0C09B; --mint: #B8DDBF; --lilac: #CFC3EF; --sky: #B6D8EB;
+      --shadow: 0 1px 2px rgba(0,0,0,.18), 0 16px 40px -20px rgba(0,0,0,.72);
+      --shadow-lg: 0 2px 6px rgba(0,0,0,.22), 0 28px 70px -24px rgba(0,0,0,.82);
+      --shadow-xl: 0 42px 130px -42px rgba(0,0,0,.88);
+      --mascot-line: #704220; --mascot-panel: #3E463A; --mascot-arc-off: rgba(247,245,233,.20);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--f-ui);
+      letter-spacing: 0;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: -2;
+      background:
+        linear-gradient(90deg, transparent 0 79px, var(--line) 80px, transparent 81px),
+        linear-gradient(0deg, transparent 0 79px, var(--line) 80px, transparent 81px);
+      background-size: 160px 160px;
+      mask-image: linear-gradient(to bottom, rgba(0,0,0,.72), transparent 74%);
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto -12% -38% -12%;
+      height: 58vh;
+      pointer-events: none;
+      z-index: -3;
+      background:
+        radial-gradient(circle at 18% 32%, color-mix(in srgb, var(--lime) 36%, transparent), transparent 28%),
+        radial-gradient(circle at 82% 18%, color-mix(in srgb, var(--ember) 22%, transparent), transparent 28%);
+      filter: blur(34px);
+      opacity: .62;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+    .skip {
+      position: fixed;
+      left: 18px;
+      top: 16px;
+      z-index: 30;
+      transform: translateY(-150%);
+      border-radius: 999px;
+      background: var(--ink);
+      color: var(--bg);
+      padding: 10px 14px;
+      transition: transform var(--d-2) var(--ease);
+    }
+    .skip:focus { transform: translateY(0); }
+    .shell { width: min(calc(100% - 40px), var(--max)); margin: 0 auto; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: color-mix(in srgb, var(--bg) 74%, transparent);
+      backdrop-filter: blur(22px) saturate(1.22);
+    }
+    .nav {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--f-display);
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .brand-mark {
+      width: 36px;
+      height: 36px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      color: var(--bg);
+      background: var(--ink);
+      box-shadow: inset 0 -12px 22px rgba(255,255,255,.10), 0 12px 26px -18px var(--ink);
+    }
+    .navlinks {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .navlinks a, .theme-toggle {
+      border-radius: 999px;
+      transition: transform var(--d-1) var(--ease), background var(--d-1) var(--ease), border-color var(--d-1) var(--ease);
+    }
+    .navlinks a { padding: 10px 12px; }
+    .navlinks a:hover, .navlinks a:focus-visible {
+      background: color-mix(in srgb, var(--surface) 72%, transparent);
+      color: var(--ink);
+      transform: translateY(-1px);
+      outline: 0;
+    }
+    .theme-toggle {
+      width: 43px;
+      height: 43px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line-2);
+      background: color-mix(in srgb, var(--surface) 82%, transparent);
+      color: var(--ink);
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .theme-toggle:hover, .theme-toggle:focus-visible {
+      transform: translateY(-1px);
+      border-color: var(--accent-line);
+      outline: 0;
+    }
+    .theme-toggle svg { width: 19px; height: 19px; }
+    .hero {
+      position: relative;
+      min-height: calc(84svh - 72px);
+      display: grid;
+      align-items: center;
+      padding: 64px 0 58px;
+      overflow: hidden;
+      isolation: isolate;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 9% 0 auto 42%;
+      height: 58%;
+      z-index: -1;
+      background: radial-gradient(circle, color-mix(in srgb, var(--accent) 14%, transparent), transparent 68%);
+      transform: translate3d(calc(var(--mx) * -0.28), calc(var(--my) * -0.18), 0);
+    }
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(360px, 1.1fr);
+      gap: 54px;
+      align-items: center;
+    }
+    .hero-copy, .stage, .section-head > *, .split > *, .dashboard > * { min-width: 0; }
+    .eyebrow {
+      margin: 0 0 18px;
+      color: var(--ember);
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    h1, h2, h3 {
+      margin: 0;
+      font-family: var(--f-display);
+      font-weight: 800;
+      line-height: 1.03;
+      letter-spacing: 0;
+    }
+    h1 { font-size: clamp(52px, 8.2vw, 116px); max-width: 760px; }
+    h2 { font-size: clamp(32px, 4.8vw, 64px); max-width: 920px; }
+    h3 { font-size: 21px; }
+    p { margin: 0; color: var(--ink-2); line-height: 1.68; }
+    .lede {
+      max-width: 650px;
+      margin-top: 22px;
+      color: var(--ink);
+      font-family: var(--f-talk);
+      font-size: clamp(18px, 2vw, 23px);
+    }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .button {
+      min-height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border-radius: 999px;
+      padding: 0 19px;
+      border: 1px solid transparent;
+      font-weight: 900;
+      font-size: 14px;
+      transition: transform var(--d-1) var(--ease), box-shadow var(--d-1) var(--ease), background var(--d-1) var(--ease);
+    }
+    .button svg { width: 18px; height: 18px; }
+    .button-primary { background: var(--ink); color: var(--bg); box-shadow: 0 22px 46px -26px var(--ink); }
+    .button-secondary {
+      background: color-mix(in srgb, var(--surface) 74%, transparent);
+      color: var(--ink);
+      border-color: var(--line-2);
+      backdrop-filter: blur(14px);
+    }
+    .button:hover, .button:focus-visible {
+      transform: translateY(-2px);
+      box-shadow: 0 24px 58px -30px var(--accent);
+      outline: 0;
+    }
+    .stage {
+      position: relative;
+      min-height: 650px;
+      perspective: 1200px;
+    }
+    .stage-card {
+      position: absolute;
+      border: 1px solid var(--line-2);
+      background: color-mix(in srgb, var(--surface) 82%, transparent);
+      backdrop-filter: blur(24px) saturate(1.18);
+      box-shadow: var(--shadow-xl);
+      transform-style: preserve-3d;
+    }
+    .stage-main {
+      inset: 8px 18px 38px 82px;
+      border-radius: 42px;
+      padding: 30px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      overflow: hidden;
+      transform: rotateX(calc(var(--my) * -0.01deg)) rotateY(calc(var(--mx) * 0.018deg)) translate3d(0,0,0);
+    }
+    .stage-main::before {
+      content: "";
+      position: absolute;
+      inset: 1px;
+      border-radius: 41px;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(255,255,255,.52), transparent 30%), radial-gradient(circle at 76% 16%, color-mix(in srgb, var(--lime) 24%, transparent), transparent 34%);
+      opacity: .55;
+    }
+    .stage-head {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      color: var(--muted);
+      font-weight: 900;
+      font-size: 12px;
+    }
+    .hero-mascot {
+      position: relative;
+      z-index: 1;
+      align-self: center;
+      justify-self: center;
+      width: min(100%, 360px);
+      filter: drop-shadow(0 28px 38px rgba(20,26,15,.18));
+      transform: translate3d(calc(var(--mx) * .06), calc(var(--my) * .06), 0);
+    }
+    .coach-line {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 8px;
+      border-radius: 24px;
+      padding: 17px 18px;
+      background: var(--ink);
+      color: var(--bg);
+      box-shadow: 0 18px 36px -28px var(--ink);
+    }
+    .coach-line b { font-family: var(--f-display); font-size: 13px; }
+    .coach-line span { color: color-mix(in srgb, var(--bg) 78%, transparent); font-family: var(--f-talk); line-height: 1.45; }
+    .ring-orbit {
+      left: 0;
+      top: 80px;
+      width: 220px;
+      min-height: 256px;
+      border-radius: 32px;
+      padding: 22px;
+      transform: translate3d(calc(var(--mx) * -0.055), calc(var(--my) * -0.04), 50px);
+    }
+    .ring-orbit h3, .schedule-glass h3, .proof-panel h3 { font-size: 16px; }
+    .dayring { display: grid; place-items: center; margin-top: 14px; }
+    .dayring svg { width: 162px; height: 162px; overflow: visible; }
+    .metric-bg, .metric-fg { fill: none; stroke-width: 9; }
+    .metric-bg { stroke: var(--line-2); }
+    .metric-fg {
+      stroke-linecap: round;
+      stroke-dasharray: 1;
+      stroke-dashoffset: calc(1 - var(--p));
+      transform-origin: center;
+      transform: rotate(-90deg);
+      transition: stroke-dashoffset 900ms var(--ease-out);
+    }
+    .ring-orbit:hover .metric-fg, .stage.is-active .metric-fg { stroke-dashoffset: calc(1 - min(1, var(--p) + .12)); }
+    .ring-legend { display: grid; gap: 8px; margin-top: 14px; }
+    .ring-leg { display: flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 12px; font-weight: 800; }
+    .ring-dot { width: 9px; height: 9px; border-radius: 99px; }
+    .ring-leg b { margin-left: auto; color: var(--ink); font-family: var(--f-display); font-size: 12px; }
+    .schedule-glass {
+      right: 0;
+      bottom: 0;
+      width: min(100%, 360px);
+      border-radius: 34px;
+      padding: 20px;
+      transform: translate3d(calc(var(--mx) * .035), calc(var(--my) * .028), 80px);
+    }
+    .schedule-row {
+      margin-top: 13px;
+      display: grid;
+      grid-template-columns: 74px 1fr;
+      gap: 12px;
+      align-items: center;
+      min-height: 66px;
+      padding: 11px;
+      border-radius: 20px;
+      background: color-mix(in srgb, var(--bg) 72%, transparent);
+      border: 1px solid var(--line);
+    }
+    .schedule-row time { color: var(--accent); font-family: var(--f-display); font-size: 13px; font-weight: 800; }
+    .schedule-row strong { display: block; margin-bottom: 3px; }
+    .schedule-row span { color: var(--muted); font-size: 12px; }
+    .proof-panel {
+      left: 48px;
+      bottom: 60px;
+      width: 238px;
+      border-radius: 30px;
+      padding: 19px;
+      transform: translate3d(calc(var(--mx) * -.025), calc(var(--my) * .04), 110px);
+    }
+    .proof-panel p { margin-top: 8px; font-family: var(--f-talk); }
+    .state-dock {
+      position: absolute;
+      right: 32px;
+      top: 28px;
+      z-index: 3;
+      display: flex;
+      gap: 7px;
+      padding: 6px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--surface) 72%, transparent);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
+    }
+    .state-dock button {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 0;
+      color: var(--ink);
+      background: transparent;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+    }
+    .state-dock button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+    .state-dock button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .mascot { display: block; overflow: visible; width: 100%; }
+    .m-ground { fill: var(--ink); opacity: .07; }
+    .m-body { transform-origin: 50% 92%; animation: mascotBreath 5.6s var(--ease) infinite; }
+    .m-head, .m-arm, .m-hand { fill: var(--mascot-body); stroke: var(--mascot-line); stroke-width: 1.7; }
+    .m-torso, .m-leg, .m-foot { fill: var(--mascot-body-2); stroke: var(--mascot-line); stroke-width: 1.7; }
+    .m-sash, .m-chip { fill: var(--mascot-panel); }
+    .m-neck { fill: var(--mascot-line); }
+    .m-eye { fill: var(--mascot-eye); stroke: var(--mascot-line); stroke-width: 1.7; transform-box: fill-box; transform-origin: center; transform: translate3d(calc(var(--mx) * .015), calc(var(--my) * .018), 0); transition: transform var(--d-1) var(--ease); }
+    .m-mouth { fill: none; stroke: var(--mascot-line); stroke-width: 2.4; stroke-linecap: round; transform-box: fill-box; transform-origin: center; }
+    .m-lid { fill: var(--mascot-line); transform-box: fill-box; transform-origin: center; transform: scaleY(0); animation: mascotBlink 7.5s infinite; }
+    .m-arc { transform-origin: 150px 190px; }
+    .m-arc path { fill: none; stroke-linecap: round; stroke-width: 11; }
+    .m-arc .arc-bg { stroke: var(--mascot-arc-off); opacity: .9; }
+    .m-arc .arc-fg { stroke: var(--accent); stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--arc-p)); transition: stroke-dashoffset 760ms var(--ease-out), opacity var(--d-2) var(--ease); }
+    .m-arc.live { animation: arcBreath 5.6s var(--ease) infinite; }
+    .m-arc--protein.live { animation-delay: .3s; }
+    .m-arc--discipline.live { animation-delay: .6s; }
+    .stage.is-active .m-arc--fuel { --arc-p: .88; }
+    .stage.is-active .m-arc--protein { --arc-p: .74; }
+    .stage.is-active .m-arc--discipline { --arc-p: .82; }
+    @keyframes mascotBreath { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(0,-4px,0) scale(1.012); } }
+    @keyframes arcBreath { 0%,100% { opacity: .62; transform: scale(.97); } 50% { opacity: 1; transform: scale(1.018); } }
+    @keyframes mascotBlink { 0%,93%,100% { transform: scaleY(0); } 96% { transform: scaleY(1); } }
+    .m-wake .m-body { animation: mascotWake 900ms var(--ease-out) both, mascotBreath 5.6s var(--ease) 900ms infinite; }
+    @keyframes mascotWake { from { transform: translate3d(0,14px,0) scale(.96); opacity: .7; } to { transform: none; opacity: 1; } }
+    .m-cheer .m-body { animation: mascotCheer 700ms var(--ease-out) both, mascotBreath 5.6s var(--ease) 700ms infinite; }
+    @keyframes mascotCheer { 0% { transform: none; } 38% { transform: translate3d(0,-12px,0) scale(1.03); } 72% { transform: translate3d(0,2px,0) scale(.995); } 100% { transform: none; } }
+    .m-cheer .m-arc .arc-fg { opacity: 1; }
+    .m-concern .m-body { animation: mascotLean 2.8s var(--ease) infinite; }
+    @keyframes mascotLean { 0%,100% { transform: rotate(0deg); } 50% { transform: rotate(-1.5deg) translate3d(-2px,0,0); } }
+    .m-concern .m-mouth { transform: translate3d(0,2px,0) scaleY(.75); }
+    .m-rest .m-body { animation: mascotBreath 8.4s var(--ease) infinite; }
+    .m-rest .m-lid { transform: scaleY(1); animation: none; opacity: .86; }
+    .m-rest .m-arc.live { animation-duration: 8.4s; }
+    .section { position: relative; padding: 106px 0; border-top: 1px solid var(--line); }
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(0, .95fr) minmax(280px, .55fr);
+      gap: 44px;
+      align-items: end;
+      margin-bottom: 34px;
+    }
+    .section-head p { font-family: var(--f-talk); font-size: 18px; }
+    .split { display: grid; grid-template-columns: minmax(280px, .78fr) minmax(0, 1.22fr); gap: 22px; align-items: stretch; }
+    .panel {
+      border: 1px solid var(--line-2);
+      border-radius: 34px;
+      background: color-mix(in srgb, var(--surface) 82%, transparent);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+    }
+    .panel-pad { padding: 28px; }
+    .proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .proof-card {
+      min-height: 310px;
+      display: grid;
+      align-content: space-between;
+      padding: 26px;
+      border-radius: 30px;
+      border: 1px solid var(--line-2);
+      background: linear-gradient(145deg, color-mix(in srgb, var(--surface) 92%, transparent), color-mix(in srgb, var(--bg-2) 72%, transparent));
+      box-shadow: 0 20px 62px -42px var(--ink);
+      transition: transform var(--d-2) var(--ease), box-shadow var(--d-2) var(--ease);
+    }
+    .proof-card:hover { transform: translateY(-6px); box-shadow: 0 30px 70px -48px var(--ink); }
+    .proof-mark {
+      width: 48px;
+      height: 48px;
+      border-radius: 17px;
+      display: grid;
+      place-items: center;
+      background: var(--lime);
+      color: var(--lime-ink);
+      box-shadow: inset 0 -14px 22px rgba(255,255,255,.22);
+      font-weight: 900;
+    }
+    .proof-card:nth-child(2) .proof-mark { background: var(--sky); color: var(--accent-ink); }
+    .proof-card:nth-child(3) .proof-mark { background: var(--lilac); color: var(--accent-ink); }
+    .proof-card h3 { margin-top: 28px; font-size: 24px; }
+    .proof-card p { margin-top: 13px; }
+    .inventory-visual {
+      min-height: 520px;
+      display: grid;
+      align-content: center;
+      gap: 20px;
+      padding: 30px;
+      background: radial-gradient(circle at 78% 18%, color-mix(in srgb, var(--lime) 26%, transparent), transparent 30%), color-mix(in srgb, var(--surface) 82%, transparent);
+    }
+    .swap-card {
+      border-radius: 28px;
+      border: 1px solid var(--line-2);
+      background: color-mix(in srgb, var(--bg) 72%, transparent);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      transform: translateY(calc(var(--scroll) * -12px));
+    }
+    .swap-card + .swap-card { transform: translateY(calc(var(--scroll) * 8px)); }
+    .swap-top { display: flex; justify-content: space-between; gap: 14px; align-items: center; color: var(--muted); font-size: 12px; font-weight: 900; text-transform: uppercase; }
+    .swap-card h3 { margin-top: 14px; }
+    .missing { margin-top: 14px; display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; background: var(--ember-soft); color: var(--ember); padding: 8px 11px; font-size: 12px; font-weight: 900; }
+    .rule-list { display: grid; gap: 14px; }
+    .rule { display: grid; grid-template-columns: 70px 1fr; gap: 16px; padding: 19px 0; border-bottom: 1px solid var(--line); }
+    .rule b { color: var(--ember); font-family: var(--f-display); font-size: 15px; }
+    .rule strong { display: block; margin-bottom: 5px; font-size: 18px; }
+    .dashboard { display: grid; grid-template-columns: .94fr 1.06fr; gap: 20px; align-items: stretch; }
+    .screen {
+      min-height: 540px;
+      padding: 24px;
+      border-radius: 38px;
+      border: 1px solid var(--line-2);
+      background: color-mix(in srgb, var(--surface) 86%, transparent);
+      box-shadow: var(--shadow-xl);
+      overflow: hidden;
+    }
+    .screen-top { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 12px; font-weight: 900; }
+    .hero-meal { margin-top: 18px; border-radius: 30px; padding: 25px; color: var(--surface); background: var(--accent); box-shadow: 0 22px 52px -36px var(--accent); }
+    .hero-meal small { display: block; margin-bottom: 12px; font-weight: 900; opacity: .75; }
+    .hero-meal strong { display: block; font-family: var(--f-display); font-size: 30px; line-height: 1.1; }
+    .meal-stack { display: grid; gap: 12px; margin-top: 18px; }
+    .meal { display: flex; justify-content: space-between; gap: 14px; align-items: center; min-height: 68px; border-radius: 22px; padding: 13px 14px; background: var(--bg); border: 1px solid var(--line); }
+    .meal b { display: block; margin-bottom: 3px; }
+    .meal span { color: var(--muted); font-size: 12px; }
+    .time-pill { flex: 0 0 auto; border-radius: 999px; padding: 8px 10px; color: var(--lime-ink); background: var(--lime); font-family: var(--f-display); font-size: 12px; font-weight: 800; }
+    .honesty { background: var(--ink); color: var(--bg); border-top: 0; }
+    .honesty p { color: color-mix(in srgb, var(--bg) 76%, transparent); }
+    .honesty .eyebrow { color: var(--lime); }
+    .truth-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; border-radius: 32px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--bg) 16%, transparent); background: color-mix(in srgb, var(--bg) 16%, transparent); }
+    .truth { min-height: 210px; padding: 26px; background: var(--ink); }
+    .truth b { display: block; color: var(--lime); font-family: var(--f-display); font-size: 34px; margin-bottom: 22px; }
+    .truth strong { display: block; margin-bottom: 9px; }
+    .final { min-height: 72svh; display: grid; place-items: center; text-align: center; }
+    .final h2 { margin: 0 auto; }
+    .final p { max-width: 650px; margin: 22px auto 0; font-family: var(--f-talk); font-size: 19px; }
+    .final .actions { justify-content: center; }
+    footer { border-top: 1px solid var(--line); padding: 28px 0 38px; color: var(--muted); font-size: 13px; }
+    .footer-row { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 18px; }
+    .reveal { opacity: 0; transform: translateY(22px); transition: opacity var(--d-3) var(--ease), transform var(--d-3) var(--ease); }
+    .reveal.is-visible { opacity: 1; transform: translateY(0); }
+    @media (max-width: 980px) {
+      .hero { min-height: auto; }
+      .hero-grid, .section-head, .split, .dashboard { grid-template-columns: 1fr; }
+      .stage { min-height: 640px; }
+      .stage-main { inset: 0 0 80px 58px; }
+      .ring-orbit { left: 0; top: 54px; }
+      .schedule-glass { right: 0; bottom: 0; }
+      .proof-panel { left: 18px; bottom: 48px; }
+      .proof-grid, .truth-grid { grid-template-columns: repeat(2, 1fr); }
+      .navlinks a { display: none; }
+    }
+    @media (max-width: 620px) {
+      .shell {
+        width: calc(100% - 28px);
+        max-width: var(--max);
+      }
+      .nav { min-height: 64px; }
+      .hero { padding: 36px 0 20px; }
+      .hero-copy {
+        width: 100%;
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+      h1 {
+        max-width: 330px;
+        font-size: 38px;
+      }
+      h2 { font-size: 31px; }
+      .lede {
+        width: 100%;
+        max-width: 330px;
+        font-size: 17px;
+      }
+      .actions {
+        width: 100%;
+        gap: 10px;
+      }
+      .button {
+        width: 100%;
+        max-width: 330px;
+      }
+      .stage {
+        width: 100%;
+        max-width: 100%;
+        min-height: 248px;
+        margin-top: 24px;
+        overflow: hidden;
+      }
+      .stage-main { inset: 0; padding: 20px; border-radius: 32px; }
+      .hero-mascot { width: min(100%, 178px); }
+      .coach-line { display: none; }
+      .ring-orbit,
+      .schedule-glass,
+      .proof-panel {
+        display: none;
+      }
+      .state-dock {
+        left: 14px;
+        right: auto;
+        top: 14px;
+        max-width: calc(100% - 28px);
+        overflow: hidden;
+      }
+      .section { padding: 72px 0; }
+      #day {
+        padding-top: 34px;
+      }
+      #day .reveal {
+        opacity: 1;
+        transform: none;
+      }
+      .proof-grid, .truth-grid { grid-template-columns: 1fr; }
+      .proof-card { min-height: 230px; }
+      .rule { grid-template-columns: 48px 1fr; }
+      .inventory-visual, .screen { min-height: auto; padding: 18px; border-radius: 28px; }
+      .hero-meal strong { font-size: 24px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+      .reveal { opacity: 1; transform: none; }
+      .stage-main, .ring-orbit, .schedule-glass, .proof-panel, .hero-mascot, .swap-card { transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <div class="shell nav">
+      <a class="brand" href="#top" aria-label="Alpha Coach home"><span class="brand-mark" aria-hidden="true">A</span><span>Alpha Coach</span></a>
+      <nav class="navlinks" aria-label="Page sections"><a href="#day">Real day</a><a href="#kitchen">Kitchen</a><a href="#honesty">Honesty</a></nav>
+      <button class="theme-toggle" type="button" aria-label="Toggle color theme"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v2m0 14v2M5 5l1.4 1.4M17.6 17.6 19 19M3 12h2m14 0h2M5 19l1.4-1.4M17.6 6.4 19 5"/><circle cx="12" cy="12" r="4"/></svg></button>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top">
+      <div class="shell hero-grid">
+        <div class="hero-copy reveal">
+          <p class="eyebrow">plutonaiii presents</p>
+          <h1>Alpha Coach</h1>
+          <p class="lede">The honest nutrition coach that plans around your real day. Tap "I'm awake", log when you actually ate, and keep the plan grounded in what is true.</p>
+          <div class="actions">
+            <a class="button button-primary" href="../alpha-coach.html"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>Open the app</a>
+            <a class="button button-secondary" href="#day"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>See the system</a>
+          </div>
+        </div>
+
+        <div class="stage reveal" aria-label="Interactive Alpha Coach preview">
+          <div class="state-dock" aria-label="Mascot state">
+            <button type="button" data-state="idle" aria-label="Set mascot to idle" aria-pressed="true">I</button>
+            <button type="button" data-state="wake" aria-label="Set mascot to wake" aria-pressed="false">W</button>
+            <button type="button" data-state="cheer" aria-label="Set mascot to cheer" aria-pressed="false">C</button>
+            <button type="button" data-state="concern" aria-label="Set mascot to concern" aria-pressed="false">?</button>
+            <button type="button" data-state="rest" aria-label="Set mascot to rest" aria-pressed="false">R</button>
+          </div>
+          <div class="stage-card ring-orbit">
+            <h3>Today</h3>
+            <div class="dayring" aria-label="Day completion rings">
+              <svg viewBox="0 0 176 176" role="img" aria-label="Day completion 71 percent">
+                <circle class="metric-bg" cx="88" cy="88" r="79" pathLength="1"/><circle class="metric-fg" cx="88" cy="88" r="79" pathLength="1" style="--p:.82;stroke:var(--accent)"/>
+                <circle class="metric-bg" cx="88" cy="88" r="63" pathLength="1"/><circle class="metric-fg" cx="88" cy="88" r="63" pathLength="1" style="--p:.68;stroke:var(--sky)"/>
+                <circle class="metric-bg" cx="88" cy="88" r="47" pathLength="1"/><circle class="metric-fg" cx="88" cy="88" r="47" pathLength="1" style="--p:.77;stroke:var(--lilac)"/>
+                <circle class="metric-bg" cx="88" cy="88" r="31" pathLength="1"/><circle class="metric-fg" cx="88" cy="88" r="31" pathLength="1" style="--p:.56;stroke:var(--ember)"/>
+                <text x="88" y="90" text-anchor="middle" dominant-baseline="middle" style="font-family:var(--f-display);font-weight:800;font-size:26px;fill:var(--ink)">71%</text>
+                <text x="88" y="111" text-anchor="middle" style="font-family:var(--f-ui);font-size:11px;font-weight:800;fill:var(--muted)">of today</text>
+              </svg>
+            </div>
+            <div class="ring-legend">
+              <span class="ring-leg"><i class="ring-dot" style="background:var(--accent)"></i>Meals <b>82%</b></span>
+              <span class="ring-leg"><i class="ring-dot" style="background:var(--sky)"></i>Water <b>68%</b></span>
+              <span class="ring-leg"><i class="ring-dot" style="background:var(--lilac)"></i>Protein <b>77%</b></span>
+            </div>
+          </div>
+          <div class="stage-card stage-main">
+            <div class="stage-head"><span>Wake 8:24</span><span>Inventory off</span></div>
+            <div class="hero-mascot">
+              <svg class="mascot m-idle" width="300" viewBox="0 0 300 380" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Interactive Alpha Coach mascot Ember">
+                <g class="m-arc m-arc--fuel live" style="--arc-p:.72"><path class="arc-bg" pathLength="1" d="M38 136A124 124 0 0 1 262 136"/><path class="arc-fg" pathLength="1" d="M38 136A124 124 0 0 1 262 136"/></g>
+                <g class="m-arc m-arc--protein live" style="--arc-p:.61"><path class="arc-bg" pathLength="1" d="M28 222A108 108 0 0 1 38 158"/><path class="arc-fg" pathLength="1" d="M28 222A108 108 0 0 1 38 158"/></g>
+                <g class="m-arc m-arc--discipline live" style="--arc-p:.69"><path class="arc-bg" pathLength="1" d="M272 222A108 108 0 0 0 262 158"/><path class="arc-fg" pathLength="1" d="M272 222A108 108 0 0 0 262 158"/></g>
+                <ellipse class="m-ground" cx="150" cy="356" rx="76" ry="7"/>
+                <g class="m-body">
+                  <path class="m-leg m-leg-a" d="M112 236h34l-7 94c-.6 9-6 14-16 14s-16-5-15-14l4-94Z"/><path class="m-leg m-leg-b" d="M154 236h34l4 94c1 9-5 14-15 14s-15.4-5-16-14l-7-94Z"/>
+                  <path class="m-foot" d="M96 330h44v14H90l6-14Z"/><path class="m-foot" d="M160 330h44l6 14h-50v-14Z"/>
+                  <path class="m-torso" d="M150 122c-28 0-48 13-54 36l-12 62c-3 17 7 29 24 29h84c17 0 27-12 24-29l-12-62c-6-23-26-36-54-36Z"/><path class="m-sash" d="M98 150l100 44-5 18-96-44 1-18Z"/>
+                  <path class="m-arm m-arm-a" d="M98 148c-16 9-24 22-27 39l-8 45c-2 10 5 17 15 17 9 0 15-6 17-16l12-69-9-16Z"/><path class="m-arm m-arm-b" d="M202 148c16 9 24 22 27 39l8 45c2 10-5 17-15 17-9 0-15-6-17-16l-12-69 9-16Z"/>
+                  <path class="m-hand" d="M62 239c-15 0-25 10-25 25 0 18 12 31 30 31 15 0 26-9 26-24 0-20-11-32-31-32Z"/><path class="m-hand" d="M238 239c15 0 25 10 25 25 0 18-12 31-30 31-15 0-26-9-26-24 0-20 11-32 31-32Z"/>
+                  <path class="m-neck" d="M130 105h40v24h-40z"/><path class="m-head" d="M143 31c32-5 55 15 57 42 2 28-22 45-50 45-29 0-49-19-49-43 0-25 17-40 42-44Z"/><path class="m-chip" d="M178 28l20 16-14 17-15-18 9-15Z"/>
+                  <path class="m-eye" d="M116 75l18-9 19 8-18 10-19-9Z"/><path class="m-eye" d="M165 74l19-8 18 9-19 9-18-10Z"/><path class="m-lid" d="M116 75l18-9 19 8-18 10-19-9Z"/><path class="m-lid" d="M165 74l19-8 18 9-19 9-18-10Z"/><path class="m-mouth" d="M139 98c8 5 22 5 30-1"/>
+                </g>
+              </svg>
+            </div>
+            <div class="coach-line"><b>Honest log</b><span>Logged lunch, eaten at 13:42. Next is protein shake at 16:30.</span></div>
+          </div>
+          <div class="stage-card schedule-glass">
+            <h3>Derived plan</h3>
+            <div class="schedule-row"><time>09:05</time><div><strong>Breakfast</strong><span>Built from wake time.</span></div></div>
+            <div class="schedule-row"><time>13:30</time><div><strong>Lunch</strong><span>Credit follows ateAt.</span></div></div>
+            <div class="schedule-row"><time>19:20</time><div><strong>Dinner</strong><span>Never pushed into the night.</span></div></div>
+          </div>
+          <div class="stage-card proof-panel"><h3>No fake certainty</h3><p>Estimates stay labelled. Silent replacements stay out.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="day">
+      <div class="shell">
+        <div class="section-head reveal"><div><p class="eyebrow">Real day</p><h2>The plan starts when you do.</h2></div><p>Alpha Coach assumes nothing until you tap "I'm awake". The day is derived from that timestamp, and late logging does not rewrite when you actually ate.</p></div>
+        <div class="proof-grid">
+          <article class="proof-card reveal"><div class="proof-mark" aria-hidden="true">01</div><div><h3>Wake anchored</h3><p>Meal timing comes from your actual start, not a fixed 8 a.m. template.</p></div></article>
+          <article class="proof-card reveal"><div class="proof-mark" aria-hidden="true">02</div><div><h3>Ate at stays true</h3><p>When a meal was eaten and when it was logged remain separate facts.</p></div></article>
+          <article class="proof-card reveal"><div class="proof-mark" aria-hidden="true">03</div><div><h3>Compression stops</h3><p>If meals cannot fit before bedtime, the coach says so instead of moving food into the night.</p></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="kitchen">
+      <div class="shell split">
+        <div class="panel inventory-visual reveal">
+          <div class="swap-card"><div class="swap-top"><span>Original</span><span>Chicken bowl</span></div><h3>Missing 180 g chicken</h3><span class="missing">Stock constraint shown</span></div>
+          <div class="swap-card"><div class="swap-top"><span>Replacement</span><span>Paneer bowl</span></div><h3>Same slot, visible reason</h3><p>Inventory is optional. When it is on, it explains the swap and keeps an escape back to the original.</p></div>
+        </div>
+        <div class="panel panel-pad reveal">
+          <p class="eyebrow">Kitchen aware, when you want it</p>
+          <h2>Inventory helps. It never becomes a gate.</h2>
+          <div class="rule-list">
+            <div class="rule"><b>01</b><div><strong>Ships off.</strong><p>The app works without inventory. Kitchen planning remains an enhancement.</p></div></div>
+            <div class="rule"><b>02</b><div><strong>Shows its work.</strong><p>Every stock-forced swap explains the original, missing quantity, replacement, and reason.</p></div></div>
+            <div class="rule"><b>03</b><div><strong>Keeps units visible.</strong><p>Numbers carry context: kcal target, protein target, quantity, and meal time.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell dashboard">
+        <div class="screen reveal">
+          <div class="screen-top"><span>Today</span><span>Grove theme</span></div>
+          <div class="hero-meal"><small>CURRENT ACTION</small><strong>Greek yogurt at 11:00</strong><p>Plan shifts from your wake time, not a fixed clock.</p></div>
+          <div class="meal-stack">
+            <div class="meal"><span><b>Chicken bowl</b>460 kcal of 2,000 kcal</span><span class="time-pill">13:30</span></div>
+            <div class="meal"><span><b>Protein shake</b>34 g protein of 170 g</span><span class="time-pill">16:30</span></div>
+            <div class="meal"><span><b>Salmon plate</b>Uses what is in stock</span><span class="time-pill">19:20</span></div>
+          </div>
+        </div>
+        <div class="panel panel-pad reveal">
+          <p class="eyebrow">The product promise</p>
+          <h2>Accountability without fiction.</h2>
+          <p class="lede">The coach can be direct because it does not pretend. It does not invent progress, hide swaps, or score from model output.</p>
+          <div class="rule-list">
+            <div class="rule"><b>A</b><div><strong>Scoring stays deterministic.</strong><p>Points are a function of timestamps and user actions.</p></div></div>
+            <div class="rule"><b>B</b><div><strong>Estimates are estimates.</strong><p>Uncertainty is labelled instead of dressed up as precision.</p></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section honesty" id="honesty">
+      <div class="shell">
+        <div class="section-head reveal"><div><p class="eyebrow">Honesty first</p><h2>The trust rules are the product.</h2></div><p>Alpha Coach markets the thing it actually does: adaptive scheduling, optional kitchen awareness, and scoring that never depends on pretend certainty.</p></div>
+        <div class="truth-grid">
+          <article class="truth reveal"><b>1</b><strong>No invented numbers.</strong><p>An estimate is labelled as an estimate.</p></article>
+          <article class="truth reveal"><b>2</b><strong>No silent replacements.</strong><p>Swaps explain what changed and why.</p></article>
+          <article class="truth reveal"><b>3</b><strong>No model-written points.</strong><p>Scoring stays in the logging system.</p></article>
+          <article class="truth reveal"><b>4</b><strong>No food into the night.</strong><p>If the plan cannot fit, the coach says so.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section final">
+      <div class="shell reveal">
+        <p class="eyebrow">Built for the day you are actually having</p>
+        <h2>Open Alpha Coach when you wake. The plan starts there.</h2>
+        <p>One local-first HTML app. No fake press, no invented user count, no claims beyond what the product does.</p>
+        <div class="actions"><a class="button button-primary" href="../alpha-coach.html"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>Open the app</a></div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="shell footer-row"><span>&copy; plutonaiii. Alpha Coach is a trademark of plutonaiii.</span><span>Self-contained marketing concept for review.</span></div></footer>
+
+  <script>
+    const root = document.documentElement;
+    const stage = document.querySelector(".stage");
+    const mascot = document.querySelector(".mascot");
+    const toggle = document.querySelector(".theme-toggle");
+    const stateButtons = document.querySelectorAll("[data-state]");
+    const params = new URLSearchParams(window.location.search);
+    const requestedTheme = params.get("theme");
+    const storedTheme = localStorage.getItem("alphaMarketingTheme");
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (requestedTheme === "light" || requestedTheme === "dark" || requestedTheme === "ember") {
+      root.dataset.theme = requestedTheme;
+    } else if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "ember") {
+      root.dataset.theme = storedTheme;
+    }
+
+    toggle.addEventListener("click", () => {
+      const current = root.dataset.theme || "light";
+      const next = current === "light" ? "ember" : current === "ember" ? "dark" : "light";
+      root.dataset.theme = next;
+      localStorage.setItem("alphaMarketingTheme", next);
+    });
+
+    function setMascotState(state) {
+      mascot.classList.remove("m-idle", "m-wake", "m-cheer", "m-concern", "m-rest");
+      mascot.classList.add("m-" + state);
+      stateButtons.forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.state === state)));
+    }
+    stateButtons.forEach((button) => button.addEventListener("click", () => setMascotState(button.dataset.state)));
+
+    const reveals = document.querySelectorAll(".reveal");
+    if ("IntersectionObserver" in window && !reducedMotion) {
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+            observer.unobserve(entry.target);
+          }
+        }
+      }, { threshold: .14 });
+      reveals.forEach((item) => observer.observe(item));
+    } else {
+      reveals.forEach((item) => item.classList.add("is-visible"));
+    }
+
+    if (!reducedMotion) {
+      window.addEventListener("pointermove", (event) => {
+        const x = event.clientX - window.innerWidth / 2;
+        const y = event.clientY - window.innerHeight / 2;
+        root.style.setProperty("--mx", `${Math.max(-70, Math.min(70, x / 8))}px`);
+        root.style.setProperty("--my", `${Math.max(-70, Math.min(70, y / 8))}px`);
+      }, { passive: true });
+
+      stage.addEventListener("pointerenter", () => {
+        stage.classList.add("is-active");
+        setMascotState("cheer");
+      });
+      stage.addEventListener("pointerleave", () => {
+        stage.classList.remove("is-active");
+        setMascotState("idle");
+      });
+
+      let ticking = false;
+      window.addEventListener("scroll", () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+          const limit = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+          root.style.setProperty("--scroll", String(Math.min(1, window.scrollY / limit)));
+          ticking = false;
+        });
+      }, { passive: true });
+    }
+  </script>
+</body>
+</html>
