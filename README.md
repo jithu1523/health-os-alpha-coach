@@ -8,6 +8,26 @@ This folder is a complete, self-contained snapshot. Nothing outside it is requir
 
 ---
 
+## Repository layout
+
+To avoid confusion about what is the app vs. supporting material:
+
+| Path | What it is |
+| --- | --- |
+| `alpha-coach.html` | **THE APP.** The entire product — one file. This is what you open and edit. |
+| `alpha-coach-sw.js` | Service worker paired with the app's notifications. Registers only when served over http(s); the app works without it on `file://`. |
+| `test/` | Test suites. `npm test` (verify) + `npm run test:boot` (boot-path render checks). |
+| `package.json`, `package-lock.json` | Test/dev scripts only. The app itself needs no dependencies. |
+| `marketing/` | A **separate** static marketing/landing website (`marketing/index.html`) — NOT the app. Its own design notes + licenses live alongside it. |
+| `office/` | Design, architecture, and research documents (product council, local-first architecture, spikes). **Docs, not app code.** |
+| `office/research/` | Cited research write-ups (Cal AI / SOTA food recognition, food-DB expansion, classifier due-diligence, premium web craft, marketing toolkit). |
+| `.claude/` | Agent/skill configuration for the assistants that worked on this repo. |
+
+> The marketing site is intentionally a copy-free, standalone page under `marketing/`.
+> If you ever see a stray `index.html` at the repo root, it was a duplicate and has been removed — the app is always `alpha-coach.html`.
+
+---
+
 ## What the app is
 
 Most nutrition apps assume a fixed clock — breakfast at 8, lunch at 1. This one
