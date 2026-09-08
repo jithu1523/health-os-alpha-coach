@@ -106,10 +106,10 @@ html[data-theme="ember"]{
 html,body{height:100%}
 body{
   margin:0;color:var(--ink);background:var(--bg);
-  font-family:var(--f-ui);font-size:15px;line-height:1.5;
+  font-family:var(--f-ui);font-size:16px;line-height:1.5;
   -webkit-font-smoothing:antialiased;overflow:hidden;
 }
-button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer}
+button{font:inherit;color:inherit;border:0;background:none;padding:0;cursor:pointer;touch-action:manipulation}
 input,select,textarea{font-family:var(--f-ui);color:inherit}
 h1,h2,h3,h4{margin:0;font-family:var(--f-display);font-weight:800;letter-spacing:-.045em;line-height:1.08}
 p{margin:0}
@@ -155,11 +155,12 @@ code{font-family:ui-monospace,SFMono-Regular,monospace;font-size:.86em;backgroun
 .nav-item[aria-current="page"]{background:var(--ink);color:#fff}
 .nav-item[aria-current="page"] .nav-pill{background:var(--lime);color:var(--ink)}
 .nav-item[aria-current="page"] svg{opacity:1}
+.nav-item:focus-visible,.tab:focus-visible,.iconbtn:focus-visible,.chip:focus-visible,.qbtn:focus-visible,.chk:focus-visible,.modal-x:focus-visible,.linkbtn:focus-visible,.chat-fab:focus-visible,.hero-note:focus-visible,.card[data-act]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .nav-pill{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:var(--accent);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;font-variant-numeric:tabular-nums}
 .nav-pill.warn{background:var(--warn)}
 .rail-foot{margin-top:auto;border-top:1px solid var(--line);padding-top:12px}
 
-.main{flex:1;min-width:0;height:100%;overflow-y:auto;overscroll-behavior:contain}
+.main{flex:1;min-width:0;height:100%;overflow-y:auto;overscroll-behavior:contain;scroll-padding-bottom:120px}
 .wrap{max-width:960px;margin:0 auto;padding:24px 26px 130px}
 
 .tabbar{display:none}
@@ -386,7 +387,7 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .pressable:active{transform:scale(.97)}
 
 /* checklist */
-.chk{width:24px;height:24px;border-radius:8px;border:1.5px solid var(--line-2);background:var(--surface);display:grid;place-items:center;flex:0 0 auto;transition:background var(--d-1) var(--ease),border-color var(--d-1) var(--ease),transform 90ms var(--ease)}
+.chk{width:44px;height:44px;border-radius:14px;border:1.5px solid var(--line-2);background:var(--surface);display:grid;place-items:center;flex:0 0 auto;transition:background var(--d-1) var(--ease),border-color var(--d-1) var(--ease),transform 90ms var(--ease)}
 .chk:active{transform:scale(.9)}
 .chk svg{opacity:0;transform:scale(.6);transition:opacity var(--d-1) var(--ease),transform var(--d-1) var(--ease-out)}
 .chk[aria-checked="true"]{background:var(--ok);border-color:var(--ok)}
@@ -534,10 +535,9 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .msg-bubble b{font-weight:700}
 .msg-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
 .typing{display:inline-flex;gap:4px;padding:2px 0}
-.typing i{width:6px;height:6px;border-radius:99px;background:var(--faint);animation:tdot 1.3s infinite}
-.typing i:nth-child(2){animation-delay:.16s}
-.typing i:nth-child(3){animation-delay:.32s}
-@keyframes tdot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.typing i{width:6px;height:6px;border-radius:99px;background:var(--faint);opacity:.45}
+.typing i:nth-child(2){opacity:.65}
+.typing i:nth-child(3){opacity:.85}
 
 @media(max-width:900px){
   .macro-row{grid-template-columns:1fr 1fr}
@@ -587,8 +587,7 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .wb-col{width:100%;border-radius:12px;position:relative;background:var(--accent);transform-origin:bottom;
   animation:barRise 560ms var(--ease-out) both;min-height:6px}
 .wb.on .wb-col{background:linear-gradient(180deg,var(--lime-2),var(--lime))}
-.wb.empty .wb-col{background:repeating-linear-gradient(135deg,var(--surface-2),var(--surface-2) 4px,transparent 4px,transparent 8px);
-  border:1px solid var(--line)}
+.wb.empty .wb-col{background:var(--surface-2);border:1px dashed var(--line-2)}
 @keyframes barRise{from{transform:scaleY(.02)}to{transform:scaleY(1)}}
 .wb-cap{position:absolute;top:-24px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;
   font-family:var(--f-display);font-weight:700;font-size:11px;letter-spacing:-.02em;padding:4px 8px;border-radius:8px;white-space:nowrap}
@@ -631,20 +630,31 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
   border:1px solid var(--line);text-align:center}
 .estout b{display:block;font-family:var(--f-display);font-weight:800;font-size:17px;letter-spacing:-.04em}
 .estout span{font-size:10.5px;color:var(--muted);font-weight:600}
+.more-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.more-card{width:100%;min-height:82px;display:flex;align-items:center;gap:12px;text-align:left;padding:14px;border-radius:var(--r-md);
+  background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);transition:transform 90ms var(--ease),border-color var(--d-1) var(--ease),background var(--d-1) var(--ease)}
+.more-card:hover{background:var(--surface-2);border-color:var(--line-2)}
+.more-card:active{transform:scale(.985)}
+.more-card svg{flex:0 0 auto;color:var(--accent)}
+.more-card b{display:block;font-family:var(--f-display);font-size:15px;letter-spacing:-.025em;color:var(--ink)}
+.more-card span{display:block;margin-top:3px;font-size:12.5px;color:var(--muted);font-weight:500;line-height:1.35}
 
 /* responsive */
 @media(max-width:900px){
   .rail{display:none}
   .wrap{padding:18px 16px 120px}
   .g2,.g3{grid-template-columns:1fr}
+  .more-list{grid-template-columns:1fr}
+  .btn.sm,.btn.xs,.chip,.iconbtn,.qbtn,.modal-x{min-height:44px}
+  .iconbtn,.qbtn,.modal-x{min-width:44px}
   .tabbar{
     display:flex;position:fixed;left:14px;right:14px;bottom:14px;z-index:50;padding:8px;
     background:var(--ink);border-radius:26px;box-shadow:var(--shadow-lg);align-items:center;
   }
-  .tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:0;padding:7px 2px;border-radius:99px;
-    font-size:0;font-weight:600;color:rgba(255,255,255,.62);
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:56px;padding:7px 2px;border-radius:99px;
+    font-size:10.5px;font-weight:600;color:rgba(255,255,255,.62);
     transition:background var(--d-2) var(--ease),color var(--d-2) var(--ease),transform 90ms var(--ease)}
-  .tab span{display:none}
+  .tab span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .tab:active{transform:scale(.9)}
   .tab[aria-current="page"]{background:#fff;color:var(--ink)}
   .tab svg{opacity:.8;width:22px;height:22px}
@@ -1686,7 +1696,7 @@ const STATE_VERSION=3;
   S.ui.photoLog=Object.assign(defaultPhotoLog(),S.ui.photoLog||{});
   if(!Array.isArray(S.ui.photoLog.top)) S.ui.photoLog.top=[];
   if(typeof S.ui.photoLog.portion!=='number'||S.ui.photoLog.portion<=0) S.ui.photoLog.portion=1;
-  if(S.ui.screen&&!['today','prep','inventory','shop','jugaad','points','prefs','stack','train','progress','coach','settings'].includes(S.ui.screen)) S.ui.screen='today';
+  if(S.ui.screen&&!['today','prep','inventory','shop','jugaad','points','prefs','stack','train','progress','coach','settings','more'].includes(S.ui.screen)) S.ui.screen='today';
   S.version=STATE_VERSION;
 })();
 const save=()=>Store.save(Store.key,S);
@@ -2890,7 +2900,7 @@ const NAV=[
   {k:'progress',label:'Progress',icon:'chart'},
   {k:'coach',label:'Coach',icon:'chat'}
 ];
-const TABS=['today','prep','inventory','shop','coach'];
+const TABS=['today','prep','inventory','coach','more'];
 
 function Rail(){
   const overdue=D()?activeRows().filter(r=>stateOf(r)==='overdue').length:0;
@@ -2917,7 +2927,7 @@ function Rail(){
 }
 function TabBar(){
   return `<nav class="tabbar" aria-label="Primary mobile navigation">${TABS.map(k=>{
-    const n=NAV.find(x=>x.k===k)||{k,label:'Settings',icon:'gear'};
+    const n=NAV.find(x=>x.k===k)||(k==='more'?{k,label:'More',icon:'list'}:{k,label:'Settings',icon:'gear'});
     return `<button class="tab" data-act="go" data-v="${k}" aria-label="${esc(n.label)}" ${S.ui.screen===k?'aria-current="page"':''}>${ic(n.icon,20)}<span>${n.label}</span></button>`;
   }).join('')}</nav>`;
 }
@@ -3874,10 +3884,32 @@ function ScreenSettings(){
       <div class="row" style="gap:8px;flex-wrap:wrap">
         <button class="btn sm" data-act="endday" ${d?'':'disabled'}>End today's session</button>
         <button class="btn sm" data-act="redoSetup">Redo setup</button>
-        <button class="btn sm ghost" style="color:var(--accent-ink)" data-act="wipe">Reset all data</button>
+        <button class="btn sm ghost" style="color:var(--accent-ink)" data-act="modal" data-v="reset">Reset all data</button>
       </div>
     </section>
   </div></div>`;
+}
+
+function ScreenMore(){
+  const items=[
+    ['shop','Shopping','Buy-list and restock flow'],
+    ['points','Discipline','Points, penalties and rewards'],
+    ['jugaad','Use what I have','Stock-aware meal options'],
+    ['stack','Supplements','Your supplement plan'],
+    ['train','Train','Workout split and cardio'],
+    ['progress','Progress','Weight, sleep and weekly trend'],
+    ['prefs','Preferences','Diet, dislikes and constraints'],
+    ['settings','Settings','Plan, reminders and reset']
+  ];
+  return `<div class="screen">${Head('More','Secondary tools and settings')}
+    <div class="more-list">
+      ${items.map(([k,title,desc])=>{
+        const n=NAV.find(x=>x.k===k)||{icon:k==='settings'?'gear':'user'};
+        return `<button class="more-card" data-act="go" data-v="${k}" aria-label="${esc(title)}">
+          ${ic(n.icon,20)}<span><b>${esc(title)}</b><span>${esc(desc)}</span></span>
+        </button>`;
+      }).join('')}
+    </div></div>`;
 }
 /* ===========================================================================
    SCREEN — POINTS
@@ -4315,6 +4347,13 @@ function Overlay(){
     eat(){
       const mm=mealById(arg)||meal;
       const its=mealItems(mm);
+      if(!invOn()) return `<div class="modal-h"><div><h2 style="font-size:19px">Confirm what you ate</h2>
+        <p class="meta" style="margin-top:4px">${esc(mm.name)} · confirm the time you actually ate</p></div>
+        <button class="modal-x" data-act="close" aria-label="Close">${ic('x',16)}</button></div>
+        <p class="talk" style="font-size:13.5px;color:var(--muted);margin-bottom:14px">
+          Kitchen tracking is off, so this will only log the meal and adjust the rest of today from the eating time.</p>
+        ${eatTimeControl('eatTime',mm.id)}
+        <button class="btn primary block lg" style="margin-top:16px" data-act="confirmEat" data-v="${mm.id}">${ic('check',17)} Log ${esc(mm.slot.toLowerCase())} eaten at ${eatTimeLabel('eatTime')}</button>`;
       return `<div class="modal-h"><div><h2 style="font-size:19px">Confirm what you ate</h2>
         <p class="meta" style="margin-top:4px">${esc(mm.name)} · adjust anything that was different</p></div>
         <button class="modal-x" data-act="close" aria-label="Close">${ic('x',16)}</button></div>
@@ -4337,6 +4376,18 @@ function Overlay(){
           <p>Some items are below the amount recorded. I will take them to zero and flag it so you can correct the count.</p></div>`:''}
         <button class="btn primary block lg" style="margin-top:16px" data-act="confirmEat" data-v="${mm.id}">${ic('check',17)} Log ${esc(mm.slot.toLowerCase())} eaten at ${eatTimeLabel('eatTime')}</button>
         <button class="btn ghost block" style="margin-top:8px" data-act="confirmEat" data-v="${mm.id}" data-arg="nodeduct">Log without changing inventory</button>`;
+    },
+
+    reset(){
+      return `<div class="modal-h"><div><h2 style="font-size:19px">Reset all data?</h2>
+        <p class="meta" style="margin-top:4px">This only affects this device</p></div>
+        <button class="modal-x" data-act="close" aria-label="Close">${ic('x',16)}</button></div>
+        <p class="talk" style="font-size:14px;color:var(--muted);margin-bottom:14px">
+          This clears setup, meal logs, inventory, points, reminders and chat saved in this browser. It cannot be undone.</p>
+        <div class="row" style="gap:8px;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn" data-act="close">Cancel</button>
+          <button class="btn dark" data-act="wipe">Reset this device</button>
+        </div>`;
     },
 
     /* ---- add / edit an inventory item ---- */
@@ -4739,7 +4790,7 @@ function Overlay(){
    The clock tick patches text nodes instead of re-rendering.
    =========================================================================== */
 const SCREENS={today:ScreenToday,prep:ScreenPrep,inventory:ScreenInventory,shop:ScreenShop,jugaad:ScreenJugaad,points:ScreenPoints,
-  prefs:ScreenPrefs,stack:ScreenStack,train:ScreenTrain,progress:ScreenProgress,coach:ScreenCoach,settings:ScreenSettings};
+  prefs:ScreenPrefs,stack:ScreenStack,train:ScreenTrain,progress:ScreenProgress,coach:ScreenCoach,settings:ScreenSettings,more:ScreenMore};
 let mounted=false;
 function mount(){
   $('#app').innerHTML=`${Rail()}<main class="main" id="main" tabindex="-1" aria-labelledby="screenTitle"><div class="wrap" id="screen"></div></main>${TabBar()}`;
@@ -4915,7 +4966,7 @@ const ACT={
     const d=D(); if(!d){busy.delete(v);return;}
     const row=activeRows().find(r=>r.meal.id===v);
     if(!row||row.status!=='pending'||!isOpen(row)){busy.delete(v);return;}
-    const noDeduct=n&&n.dataset.arg==='nodeduct';
+    const noDeduct=(n&&n.dataset.arg==='nodeduct')||!invOn();
     const use=[];
     if(!noDeduct){
       mealItems(row.meal).forEach(i=>{

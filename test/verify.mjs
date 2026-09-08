@@ -286,6 +286,9 @@ ok('logging out of sequence is refused', A().commitMeal({ mealId: A().sched().ro
 A().setOffset(d().wake + 150 * MIN - Date.now()); await wait(120);
 click(act('ate', 'm1')); await wait(150);
 ok('the confirm window asks when you actually ate', !!doc.querySelector('#eatTime'));
+ok('inventory-off meal confirmation avoids stock controls',
+  /Kitchen tracking is off/.test(txt()) &&
+  !/In stock|Log without changing inventory|not enough recorded/.test(txt()));
 {
   const dialog = doc.querySelector('#overlay .modal[role="dialog"][aria-modal="true"]');
   ok('meal dialog is labelled and receives focus',
@@ -655,6 +658,9 @@ ok('and returns nothing without a backend', (await A().AlphaAPI.recogniseMeal('d
   /* Turn flexible on through the real Settings toggle. */
   click(act('go', 'settings')); await wait(60);
   ok('settings offers a flexible-logging toggle', !!act('flexToggle'));
+  click(act('modal', 'reset')); await wait(80);
+  ok('reset all data asks for confirmation', /Reset all data\?/.test(txt()) && !!act('wipe'));
+  A().ACT.close(); await wait(60);
   click(act('flexToggle')); await wait(120);
   ok('the toggle flips the preference', A().S.prefs.flexible === true);
 
@@ -712,7 +718,7 @@ ok('and returns nothing without a backend', (await A().AlphaAPI.recogniseMeal('d
 }
 
 /* ------------------------------------------------------------ every screen */
-for (const sc of ['today', 'prep', 'inventory', 'shop', 'points', 'jugaad', 'stack', 'train', 'progress', 'coach', 'prefs', 'settings']) {
+for (const sc of ['today', 'prep', 'inventory', 'shop', 'points', 'jugaad', 'stack', 'train', 'progress', 'coach', 'prefs', 'settings', 'more']) {
   click(act('go', sc)); await wait(60);
   ok('renders: ' + sc, A().S.ui.screen === sc && doc.querySelector('#screen').children.length > 0);
 }
@@ -723,6 +729,20 @@ ok('app shell exposes skip link and labelled landmarks',
   !!doc.querySelector('.tabbar[aria-label="Primary mobile navigation"]'));
 ok('primary navigation buttons have accessible names',
   [...doc.querySelectorAll('.nav-item[data-act="go"], .tab[data-act="go"]')].every(b => b.getAttribute('aria-label')));
+ok('mobile navigation exposes labelled More access',
+  !!doc.querySelector('.tab[data-v="more"][aria-label="More"]') &&
+  /More/.test(doc.querySelector('.tab[data-v="more"] span')?.textContent || ''));
+click(act('go', 'more')); await wait(60);
+ok('More screen links secondary destinations',
+  ['shop','points','jugaad','stack','train','progress','prefs','settings'].every(v => !!doc.querySelector(`.more-card[data-v="${v}"]`)));
+ok('small interactive controls have visible focus styles',
+  /\.nav-item:focus-visible/.test(html) && /\.chip:focus-visible/.test(html) && /\.chk:focus-visible/.test(html));
+ok('mobile controls keep touch-sized targets',
+  /\.btn\.sm,\.btn\.xs,\.chip,\.iconbtn,\.qbtn,\.modal-x\{min-height:44px\}/.test(html) &&
+  /\.iconbtn,\.qbtn,\.modal-x\{min-width:44px\}/.test(html) &&
+  /\.tab\{[^}]*min-height:56px/.test(html));
+ok('typing indicator avoids infinite dot animation', !/\.typing i\{[^}]*animation:tdot/.test(html));
+ok('empty progress bars avoid generated stripe texture', !/repeating-linear-gradient/.test(html));
 ok('toast region announces updates politely',
   !!doc.querySelector('#toasts[role="status"][aria-live="polite"]'));
 click(act('go', 'today')); await wait(80);
