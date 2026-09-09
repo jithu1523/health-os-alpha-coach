@@ -7,5 +7,11 @@
     "test": "node test/verify.mjs",
     "test:boot": "node test/boot.mjs"
   },
-  "devDependencies": { "jsdom": "^24.0.0" }
+  "devDependencies": {
+    "jsdom": "^24.0.0"
+  },
+  "dependencies": {
+    "dialkit": "^1.4.3",
+    "motion": "^13.2.0"
+  }
 }

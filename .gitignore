@@ -1,1 +1,9 @@
 node_modules/
+
+# Agent tooling artifacts (skills, MCP, per-agent config) — not part of the app
+.agents/
+.codex/
+.claude/
+.tmp-*/
+*.tmp
+skills-lock.json
