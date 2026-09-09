@@ -14,6 +14,7 @@
 |---|---|---|---|
 | Interactive mascot SVG | Ported from this repository's `alpha-coach.html` inline mascot implementation | First-party plutonaiii / Alpha Coach brand asset | Same mascot geometry and state classes adapted for the marketing page. No third-party attribution. |
 | Interactive progress rings | Ported/adapted from this repository's `alpha-coach.html` SVG ring and mascot arc implementation | First-party plutonaiii / Alpha Coach brand asset | Uses SVG `pathLength`, `stroke-dasharray`, and `stroke-dashoffset`; no PNG asset. |
+| `og-image.png` | Rendered from this marketing page's first-party hero composition | First-party plutonaiii / Alpha Coach brand asset | 1200x630 social preview generated locally from `marketing/index.html`. |
 | Layout, micro-interactions, and inline SVG icons | Written for this marketing page | First-party plutonaiii / Alpha Coach code | No copied template, stock photo, or third-party icon set. |
 
 ## Code And Libraries

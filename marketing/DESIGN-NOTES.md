@@ -3,7 +3,7 @@
 ## Source Of Truth
 
 - V2 is rebuilt from the app's actual visual system, not generic landing-page styling.
-- The Grove and Ember palette tokens were pulled from `alpha-coach.html`; the site also keeps a dark theme for review.
+- The Grove and Ember palette tokens were pulled from `alpha-coach.html` into `design-tokens.css`; the site also keeps a dark theme for review.
 - The hero mascot is a port of the app's inline SVG mascot: same head paths, body structure, five state classes, breathing/blink states, and `.m-arc--fuel`, `.m-arc--protein`, `.m-arc--discipline` progress arcs.
 - The day rings are real SVG progress rings using `pathLength="1"`, `stroke-dasharray`, and `stroke-dashoffset`, matching the app's ring implementation pattern. No ring PNG remains.
 
@@ -17,7 +17,7 @@
 ## Motion And Interaction
 
 - No third-party animation library is used.
-- Motion is transform/opacity/stroke-dashoffset based and runs through CSS transitions, CSS keyframes, `IntersectionObserver`, and `requestAnimationFrame`-batched scroll updates.
+- Motion is transform/opacity/stroke-dashoffset based and runs through CSS transitions, CSS keyframes, and `IntersectionObserver` reveals.
 - The mascot reacts to pointer movement with eye tracking and stage parallax. Hovering the stage fills the mascot arcs and shifts the mascot into `cheer`.
 - The state dock lets reviewers test idle, wake, cheer, concern, and rest states from the ported app state classes.
 - `prefers-reduced-motion: reduce` disables animation, parallax, scroll smoothing, and reveals.

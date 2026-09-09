@@ -1,0 +1,166 @@
+:root {
+  --f-display: "Unbounded", ui-sans-serif, system-ui, sans-serif;
+  --f-talk: "Cabinet Grotesk", ui-rounded, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --f-ui: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --bg: #F2F4E8;
+  --bg-2: #E7EDD5;
+  --surface: #FFFFFF;
+  --surface-2: #F4F6EC;
+  --ink: #141A0F;
+  --ink-2: #3E463A;
+  --muted: #727A6B;
+  --line: rgba(20,26,15,.08);
+  --line-2: rgba(20,26,15,.14);
+  --accent: #2F5D34;
+  --accent-ink: #1D3D21;
+  --accent-soft: rgba(47,93,52,.08);
+  --accent-line: rgba(47,93,52,.20);
+  --lime: #C6E85C;
+  --lime-2: #DCF07F;
+  --lime-ink: #4A6410;
+  --ember: #C85E2C;
+  --ember-soft: rgba(200,94,44,.10);
+  --peach: #F8CDA0;
+  --mint: #C3E4CE;
+  --lilac: #DCD6F2;
+  --sky: #CFE3F0;
+  --shadow: 0 1px 2px rgba(20,26,15,.04), 0 10px 30px -14px rgba(20,26,15,.18);
+  --shadow-lg: 0 2px 6px rgba(20,26,15,.05), 0 24px 50px -20px rgba(20,26,15,.28);
+  --shadow-xl: 0 40px 120px -54px rgba(20,26,15,.46);
+  --ease: cubic-bezier(.22,.61,.28,1);
+  --ease-out: cubic-bezier(.16,1,.3,1);
+  --d-1: 140ms;
+  --d-2: 260ms;
+  --d-3: 380ms;
+  --max: 1180px;
+  --mascot-body: var(--peach);
+  --mascot-body-2: var(--surface-2);
+  --mascot-line: var(--accent-ink);
+  --mascot-panel: var(--ink-2);
+  --mascot-eye: var(--lime);
+  --mascot-arc-off: var(--line-2);
+  --mx: 0px;
+  --my: 0px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #10150E;
+    --bg-2: #182113;
+    --surface: #151D12;
+    --surface-2: #20291C;
+    --ink: #F7F5E9;
+    --ink-2: #CAD3BE;
+    --muted: #9DA891;
+    --line: rgba(247,245,233,.10);
+    --line-2: rgba(247,245,233,.18);
+    --accent: #95C987;
+    --accent-ink: #DDEFD5;
+    --accent-soft: rgba(149,201,135,.12);
+    --accent-line: rgba(149,201,135,.24);
+    --lime: #D7F26B;
+    --lime-2: #E2F88C;
+    --lime-ink: #26380B;
+    --ember: #E07B48;
+    --ember-soft: rgba(224,123,72,.13);
+    --peach: #F0C09B;
+    --mint: #B8DDBF;
+    --lilac: #CFC3EF;
+    --sky: #B6D8EB;
+    --shadow: 0 1px 2px rgba(0,0,0,.18), 0 16px 40px -20px rgba(0,0,0,.72);
+    --shadow-lg: 0 2px 6px rgba(0,0,0,.22), 0 28px 70px -24px rgba(0,0,0,.82);
+    --shadow-xl: 0 42px 130px -42px rgba(0,0,0,.88);
+    --mascot-line: #704220;
+    --mascot-panel: #3E463A;
+    --mascot-arc-off: rgba(247,245,233,.20);
+  }
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg: #F2F4E8;
+  --bg-2: #E7EDD5;
+  --surface: #FFFFFF;
+  --surface-2: #F4F6EC;
+  --ink: #141A0F;
+  --ink-2: #3E463A;
+  --muted: #727A6B;
+  --line: rgba(20,26,15,.08);
+  --line-2: rgba(20,26,15,.14);
+  --accent: #2F5D34;
+  --accent-ink: #1D3D21;
+  --accent-soft: rgba(47,93,52,.08);
+  --accent-line: rgba(47,93,52,.20);
+  --lime: #C6E85C;
+  --lime-2: #DCF07F;
+  --lime-ink: #4A6410;
+  --ember: #C85E2C;
+  --ember-soft: rgba(200,94,44,.10);
+  --peach: #F8CDA0;
+  --mint: #C3E4CE;
+  --lilac: #DCD6F2;
+  --sky: #CFE3F0;
+  --mascot-line: var(--accent-ink);
+  --mascot-panel: var(--ink-2);
+  --mascot-arc-off: var(--line-2);
+}
+
+html[data-theme="ember"] {
+  color-scheme: light;
+  --bg: #FAF7F2;
+  --bg-2: #F2EDE4;
+  --surface: #FFFFFF;
+  --surface-2: #F4F0E9;
+  --ink: #17140F;
+  --ink-2: #463F37;
+  --muted: #7B7269;
+  --line: rgba(23,20,15,.09);
+  --line-2: rgba(23,20,15,.16);
+  --accent: #C85E2C;
+  --accent-ink: #8E4019;
+  --accent-soft: rgba(200,94,44,.09);
+  --accent-line: rgba(200,94,44,.24);
+  --lime: #E6C79B;
+  --lime-2: #F0DCC0;
+  --lime-ink: #8E4019;
+  --peach: #F0D5BC;
+  --mint: #D8E2D2;
+  --lilac: #E4DCD2;
+  --sky: #DDE3E8;
+  --ember: #C85E2C;
+  --mascot-line: var(--accent-ink);
+  --mascot-panel: var(--ink-2);
+  --mascot-arc-off: var(--line-2);
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #10150E;
+  --bg-2: #182113;
+  --surface: #151D12;
+  --surface-2: #20291C;
+  --ink: #F7F5E9;
+  --ink-2: #CAD3BE;
+  --muted: #9DA891;
+  --line: rgba(247,245,233,.10);
+  --line-2: rgba(247,245,233,.18);
+  --accent: #95C987;
+  --accent-ink: #DDEFD5;
+  --accent-soft: rgba(149,201,135,.12);
+  --accent-line: rgba(149,201,135,.24);
+  --lime: #D7F26B;
+  --lime-2: #E2F88C;
+  --lime-ink: #26380B;
+  --ember: #E07B48;
+  --ember-soft: rgba(224,123,72,.13);
+  --peach: #F0C09B;
+  --mint: #B8DDBF;
+  --lilac: #CFC3EF;
+  --sky: #B6D8EB;
+  --shadow: 0 1px 2px rgba(0,0,0,.18), 0 16px 40px -20px rgba(0,0,0,.72);
+  --shadow-lg: 0 2px 6px rgba(0,0,0,.22), 0 28px 70px -24px rgba(0,0,0,.82);
+  --shadow-xl: 0 42px 130px -42px rgba(0,0,0,.88);
+  --mascot-line: #704220;
+  --mascot-panel: #3E463A;
+  --mascot-arc-off: rgba(247,245,233,.20);
+}
