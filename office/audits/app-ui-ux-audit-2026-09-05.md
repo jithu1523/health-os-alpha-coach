@@ -100,3 +100,27 @@ Verification:
 
 4. Real visual and assistive-technology QA.
    Reason: the suites prove render and behavior, not appearance. The app still needs human eyes at desktop and 375px, plus real VoiceOver/NVDA testing if accessibility sign-off is required.
+
+## PASS 2
+
+### CHANGED
+
+1. Onboarding/preferences option walls.
+   Onboarding step 3 now groups Like, Dislike, and Will not eat into native disclosure sections. Preferences now groups the large allergies and food-preference chip sets the same way. No choices were removed: every chip remains rendered and reachable, with selected counts in the group header. Defaults and opt-in behavior stayed unchanged.
+
+2. Offline typography.
+   Replaced the remote Unbounded/Cabinet Grotesk/Plus Jakarta Sans stack with one embedded DM Sans latin WOFF2 subset. DM Sans was chosen because it keeps the premium health-product tone calmer than Plus Jakarta Sans while staying practical for dense controls, coach copy, numbers, and headings in a single-file offline app. The CSS role split remains, but all three roles now use DM Sans with weight/scale/tracking differentiation instead of three external families.
+
+3. Font license.
+   DM Sans is licensed under the SIL Open Font License 1.1. The embedded subset is recorded inline in `alpha-coach.html` with the copyright notice: Copyright 2014 The DM Sans Project Authors. Source family: Google Fonts `ofl/dmsans`.
+
+4. Reduced-motion policy.
+   Replaced the global 1ms animation/transition kill switch with a targeted policy. Reduced motion now removes looping/spatial animation from screens, onboarding, modals, toasts, celebratory effects, progress rails, and mascot motion while preserving short non-spatial feedback transitions for color, opacity, border, and focus/state changes. Due meal state keeps a static accent ring instead of a pulse.
+
+5. Automated a11y/motion regression coverage.
+   Added verify checks for grouped disclosures, choice reachability, local font embedding/no runtime font CDNs, inline font license recording, and the targeted reduced-motion policy. Real device and screen-reader QA remains skipped because it needs the human's hardware.
+
+### VERIFIED
+
+- `C:\Program Files\nodejs\node.exe test\verify.mjs` -> PASS 225
+- `C:\Program Files\nodejs\node.exe test\boot.mjs` -> ALL BOOT PATHS RENDER, 13 paths

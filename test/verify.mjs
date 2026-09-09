@@ -112,12 +112,27 @@ ok('photo logging uses the confirmed Food-101 ONNX model metadata',
 
 /* ---------------------------------------------------------------- onboarding */
 ok('kitchen tracking is off by default', A().invOn() === false);
-for (let i = 0; i < 6; i++) { click(act('ob', 'next')); await wait(35); }
+for (let i = 0; i < 3; i++) { click(act('ob', 'next')); await wait(35); }
+ok('onboarding groups large food preference sets',
+  doc.querySelectorAll('.ob-inner .choice-group').length === 3 &&
+  !!doc.querySelector('.ob-inner [data-pref-group="like"][open]') &&
+  !!doc.querySelector('.ob-inner [data-pref-group="will-not-eat"]'));
+ok('onboarding keeps every food preference choice reachable',
+  ['togLike', 'togDislike', 'togRefuse'].every(a => doc.querySelectorAll(`.ob-inner [data-act="${a}"]`).length > 20));
+for (let i = 0; i < 3; i++) { click(act('ob', 'next')); await wait(35); }
 ok('onboarding asks about the kitchen rather than assuming', /Shall I track your kitchen/.test(txt()));
 click(act('ob', 'next')); await wait(50);
 click(act('ob', 'done')); await wait(170);
 ok('app mounts', !!doc.querySelector('.rail'));
 ok('no pantry data entry was required', doc.querySelectorAll('[data-pantry]').length === 0);
+click(act('go', 'prefs')); await wait(60);
+ok('preferences group large option walls with native disclosures',
+  doc.querySelectorAll('#screen .choice-group').length >= 4 &&
+  !!doc.querySelector('#screen [data-pref-group="allergies-never-included"][open]') &&
+  !!doc.querySelector('#screen [data-pref-group="will-not-eat"]'));
+ok('preferences keep every grouped food choice reachable',
+  ['togAllergy', 'togLike', 'togDislike', 'togRefuse'].every(a => doc.querySelectorAll(`#screen [data-act="${a}"]`).length > 20));
+click(act('go', 'today')); await wait(80);
 
 /* ------------------------------------------------------------- the day starts */
 click(act('wake')); await wait(280);
@@ -599,7 +614,7 @@ ok('and returns nothing without a backend', (await A().AlphaAPI.recogniseMeal('d
   const before = A().invQty('chicken');
   let r = await say('add 1 kg chicken');
   ok('chat writes inventory', A().invQty('chicken') === before + 1000);
-  ok('and reports before and after', /→/.test(r));
+  ok('and reports before and after', /→|&rarr;/.test(r));
   r = await say('set rice to 500 g');
   ok('chat corrects a quantity', A().invQty('rice') === 500);
   r = await say('I slept 7 hours');
@@ -743,6 +758,21 @@ ok('mobile controls keep touch-sized targets',
   /\.tab\{[^}]*min-height:56px/.test(html));
 ok('typing indicator avoids infinite dot animation', !/\.typing i\{[^}]*animation:tdot/.test(html));
 ok('empty progress bars avoid generated stripe texture', !/repeating-linear-gradient/.test(html));
+ok('app embeds DM Sans locally and removes runtime font CDNs',
+  /font-family:'DM Sans'/.test(html) &&
+  /data:font\/woff2;base64/.test(html) &&
+  !/fonts\.googleapis|fonts\.gstatic|api\.fontshare/.test(html));
+ok('font license is recorded inline',
+  /DM Sans Project Authors/.test(html) && /SIL Open Font License 1\.1/.test(html));
+ok('Plus Jakarta Sans is no longer a type role', !/Plus Jakarta Sans/.test(html));
+ok('reduced motion policy is targeted, not a blanket 1ms kill switch',
+  /prefers-reduced-motion: reduce/.test(html) &&
+  !/animation-duration:1ms/.test(html) &&
+  !/transition-duration:1ms/.test(html));
+ok('reduced motion removes looping motion while preserving state feedback',
+  /\.meal\[data-state="due"\] \.meal-dot\{animation:none!important;box-shadow/.test(html) &&
+  /\.track > i,\.geo-rail > i,\.hero-rail > i\{transition:none!important\}/.test(html) &&
+  /transition-property:background,border-color,color,opacity,box-shadow/.test(html));
 ok('toast region announces updates politely',
   !!doc.querySelector('#toasts[role="status"][aria-live="polite"]'));
 click(act('go', 'today')); await wait(80);
