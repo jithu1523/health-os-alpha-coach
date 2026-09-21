@@ -320,17 +320,21 @@ ok('inventory-off meal confirmation avoids stock controls',
     !!dialog && !!dialog.getAttribute('aria-label') && dialog.contains(doc.activeElement),
     dialog ? `${dialog.getAttribute('aria-label')} / ${doc.activeElement && doc.activeElement.tagName}` : 'no dialog');
 }
-ok('main confirmation shows compact eat-time chips', doc.querySelectorAll('[data-eat-time-control="eatTime"] [data-act="eatTimeQuick"]').length === 4);
+ok('main confirmation shows single-tap eat-time chips',
+  doc.querySelectorAll('[data-eat-time-control="eatTime"] [data-act="eatTimeQuick"]').length === 5 &&
+  /15m ago/.test(txt()) && !!doc.querySelector('[data-eat-time-control="eatTime"] [data-act="eatTimeExact"]'));
 {
-  const claimAt = Date.now() + A().offset - 30 * MIN;
-  click('[data-act="eatTimeQuick"][data-v="eatTime"][data-kind="30"]'); await wait(120);
-  ok('main confirmation chip sets a stated ateAt', doc.querySelector('#eatTime').value === timeText(claimAt), doc.querySelector('#eatTime').value);
+  const claimAt = Date.now() + A().offset - 15 * MIN;
+  click('[data-act="eatTimeQuick"][data-v="eatTime"][data-kind="15"]'); await wait(120);
+  ok('main confirmation 15m chip sets a stated ateAt', doc.querySelector('#eatTime').value === timeText(claimAt), doc.querySelector('#eatTime').value);
   ok('main confirmation primary includes selected time', txt().includes(`Log breakfast eaten at ${displayTime(claimAt)}`));
 }
 click(act('confirmEat', 'm1')); await wait(950);
 ok('normal planned-meal confirmation still logs the meal', d().logs.m1.status === 'done');
+ok('quick-chip stated time still earns time-confirmed scoring through commitMeal',
+  A().S.points.ledger.some(e => e.ref === 'm1' && e.code === 'TIME_CONFIRMED'));
 ok('both timestamps are stored', !!d().logs.m1.ateAt && !!d().logs.m1.loggedAt);
-ok('main confirmation stores the quick-chip time as ateAt', timeText(d().logs.m1.ateAt) === timeText(d().logs.m1.loggedAt - 30 * MIN));
+ok('main confirmation stores the quick-chip time as ateAt', timeText(d().logs.m1.ateAt) === timeText(d().logs.m1.loggedAt - 15 * MIN));
 ok('next meal derives from the eating time', (() => {
   const gap = (A().sched().rows[1].at - d().logs.m1.ateAt) / MIN;
   const rule = A().PLAN.meals[0].gap;
@@ -547,7 +551,9 @@ A().ACT.wake(); await wait(220);
   click(act('openEstimate', nx.meal.id)); await wait(170);
   ok('the estimator opens', /What did you eat/.test(txt()));
   ok('the estimator asks when you actually ate', !!doc.querySelector('#estEatTime'));
-  ok('the estimator shows compact eat-time chips', doc.querySelectorAll('[data-eat-time-control="estEatTime"] [data-act="eatTimeQuick"]').length === 4);
+  ok('the estimator shows single-tap eat-time chips',
+    doc.querySelectorAll('[data-eat-time-control="estEatTime"] [data-act="eatTimeQuick"]').length === 5 &&
+    /15m ago/.test(txt()) && !!doc.querySelector('[data-eat-time-control="estEatTime"] [data-act="eatTimeExact"]'));
   ok('estimator meal-time chip label is the planned time', doc.querySelector('[data-act="eatTimeQuick"][data-v="estEatTime"][data-kind="meal"]').textContent.trim() === displayTime(nx.at));
   click('[data-act="eatTimeQuick"][data-v="estEatTime"][data-kind="meal"]'); await wait(120);
   ok('estimator meal-time chip sets a stated ateAt', doc.querySelector('#estEatTime').value === timeText(nx.at), doc.querySelector('#estEatTime').value);

@@ -763,15 +763,16 @@ function eatTimeControl(id='eatTime',mealId=null){
     <div class="eat-time-main">
       <span class="label">Ate at</span>
       <button class="eat-time-value" type="button" data-act="eatTimeExact" data-v="${id}">${eatTimeLabel(id)}</button>
-      <span class="tag mute">${claim.source==='now'?'now':claim.source==='meal'?'planned':claim.source==='30'?'30m ago':claim.source==='60'?'1h ago':'exact'}</span>
+      <span class="tag mute">${claim.source==='now'?'now':claim.source==='meal'?'planned':claim.source==='15'?'15m ago':claim.source==='30'?'30m ago':claim.source==='60'?'1h ago':'exact'}</span>
       <input class="input eat-time-native" id="${id}" data-eat-time="${id}" data-default-time="${claim.value}" type="time" value="${claim.value}" aria-label="Exact eating time">
     </div>
     <div class="eat-time-chips">
       ${chip('now','Now',claim.source==='now')}
+      ${chip('15','15m ago',claim.source==='15')}
       ${chip('30','30m ago',claim.source==='30')}
       ${chip('60','1h ago',claim.source==='60')}
       ${chip('meal',mealChip,claim.source==='meal',mealAt?'':' disabled aria-disabled="true"')}
-      <button class="iconbtn" type="button" data-act="eatTimeExact" data-v="${id}" aria-label="Pick exact eating time">${ic('clock',16)}</button>
+      <button class="chip" type="button" data-act="eatTimeExact" data-v="${id}">${ic('clock',12)} Set...</button>
     </div>
     <p class="eat-time-note">${note}</p>
   </div>`;
@@ -5015,7 +5016,8 @@ const ACT={
   eatTimeQuick(v,n){
     const kind=n.dataset.kind, loggedAt=now();
     let ts=loggedAt;
-    if(kind==='30') ts=loggedAt-30*MIN;
+    if(kind==='15') ts=loggedAt-15*MIN;
+    else if(kind==='30') ts=loggedAt-30*MIN;
     else if(kind==='60') ts=loggedAt-60*MIN;
     else if(kind==='meal'){
       const mealAt=mealTimeForControl(n.dataset.meal);
