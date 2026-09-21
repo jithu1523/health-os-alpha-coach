@@ -455,6 +455,13 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .pt-n.neg{color:var(--accent-ink)}
 .pt-l{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
 .pt-last{font-size:12.5px;color:var(--muted);margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+.honesty-card{border-color:var(--accent-line);background:linear-gradient(160deg,var(--accent-soft),var(--surface) 58%)}
+.honesty-list{display:grid;gap:8px;margin-top:12px}
+.honesty-win{display:flex;align-items:flex-start;gap:10px;padding:10px;border:1px solid var(--accent-line);border-radius:var(--r-md);background:var(--surface)}
+.honesty-icon{width:28px;height:28px;border-radius:10px;display:grid;place-items:center;flex:0 0 auto;background:var(--accent);color:#fff}
+.honesty-mini{display:flex;align-items:flex-start;gap:9px;margin-top:10px;padding:9px 10px;border-radius:var(--r-md);background:var(--accent-soft);border:1px solid var(--accent-line)}
+.honesty-mini b{display:block;font-size:12.5px;color:var(--ink)}
+.honesty-mini span{display:block;font-size:12px;color:var(--muted);margin-top:2px}
 .num.pos{color:var(--ok)}
 .num.neg{color:var(--accent-ink)}
 
@@ -473,12 +480,15 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
   font-variant-numeric:tabular-nums}
 .ledger-pts.pos{color:var(--ok)}
 .ledger-pts.neg{color:var(--accent-ink)}
+.ledger-row.honesty{margin-top:8px;padding:10px;border:1px solid var(--accent-line);border-radius:var(--r-md);background:var(--accent-soft)}
 
 .toast.pt{padding-left:10px}
 .toast.pt .pt-badge{font-family:var(--f-display);font-weight:700;font-size:13px;padding:3px 9px;border-radius:8px;
   background:rgba(255,255,255,.14);flex:0 0 auto}
 .toast.pt.pos .pt-badge{background:rgba(97,196,155,.24);color:#8ee9c4}
 .toast.pt.neg .pt-badge{background:rgba(240,168,110,.2);color:#f7bd8c}
+.toast.pt.honesty{background:var(--accent-ink)}
+.toast.pt.honesty .pt-badge{background:var(--accent);color:#fff}
 
 .rowline{font-size:12.5px;color:var(--muted);margin-top:7px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .timepair{display:flex;gap:14px;flex-wrap:wrap;margin-top:9px;font-size:12.5px;color:var(--muted);align-items:center}
@@ -1911,6 +1921,21 @@ const Points={
   streak(){ return S.points.streak||0; }
 };
 
+const HONESTY_CODES=new Set(['LOGGED_HONESTLY','TIME_CONFIRMED','NEVER_LOGGED_VOIDED']);
+function isHonestyEntry(e){ return !!(e&&HONESTY_CODES.has(e.code)); }
+function honestyEntries(k){ return Points.dayEntries(k).filter(isHonestyEntry); }
+function honestyPoints(k){ return honestyEntries(k).reduce((a,e)=>a+(e.pts||0),0); }
+function honestyTitle(e){
+  if(!e) return 'Honesty counted';
+  if(e.code==='TIME_CONFIRMED') return 'Eating time stated';
+  if(e.code==='NEVER_LOGGED_VOIDED') return 'Record corrected';
+  return 'Honesty counted';
+}
+function honestyText(e){
+  const detail=(e&&(e.reason||e.label))||'You told me what happened.';
+  return `${honestyTitle(e)}: ${detail}`;
+}
+
 /* The moment a "never logged" claim is proven false, return the penalty via the
    SOLE write path — a positive reversing entry, NOT a ledger deletion. Fires at
    most once per meal, and only if the penalty was actually applied to this ref. */
@@ -2880,8 +2905,9 @@ function pointsToast(entries){
     setTimeout(()=>{
       const box=$('#toasts'); if(!box) return;
       const n=document.createElement('div');
-      n.className='toast pt '+(e.pts>0?'pos':'neg');
-      n.innerHTML=`<span class="pt-badge">${e.pts>0?'+':''}${e.pts}</span><span>${esc(e.reason||e.label)}</span>`;
+      const honest=isHonestyEntry(e);
+      n.className='toast pt '+(e.pts>0?'pos':'neg')+(honest?' honesty':'');
+      n.innerHTML=`<span class="pt-badge">${e.pts>0?'+':''}${e.pts}</span><span>${esc(honest?honestyText(e):(e.reason||e.label))}</span>`;
       box.appendChild(n);
       setTimeout(()=>{n.classList.add('out');setTimeout(()=>n.remove(),280);},3200);
       while(box.children.length>4) box.firstElementChild.remove();
@@ -3107,6 +3133,7 @@ function WeekBars(){
 function PointsStrip(){
   const pos=Points.positive(), neg=Points.negative(), net=pos+neg;
   const feed=(S.ui.pointsFeed||[]).slice(-1)[0];
+  const honest=honestyEntries().slice(-1)[0];
   return `<section class="card pad-s points-strip geo-panel" data-act="go" data-v="points" role="button" tabindex="0">
     <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:9px">
       <div class="tile tile--lime"><div class="tile-n">+${pos}</div><div class="tile-l">Earned</div></div>
@@ -3115,6 +3142,30 @@ function PointsStrip(){
       <div class="tile tile--mint"><div class="tile-n">${Points.streak()}</div><div class="tile-l">Streak</div></div>
     </div>
     ${feed?`<p class="pt-last talk">${feed.pts>0?'+':''}${feed.pts} · ${esc(feed.reason||feed.label)}</p>`:''}
+    ${honest?`<div class="honesty-mini">${ic('check',16,2,'var(--accent-ink)')}<div><b>${honestyTitle(honest)} ${honest.pts>0?'+':''}${honest.pts}</b><span>${esc(honest.reason||honest.label)}</span></div></div>`:''}
+  </section>`;
+}
+function HonestyCard(limit=3){
+  const entries=honestyEntries().slice().reverse();
+  if(!entries.length) return '';
+  const total=honestyPoints();
+  return `<section class="card honesty-card">
+    <div class="spread" style="align-items:flex-start">
+      <div style="min-width:0">
+        <span class="label">Honesty</span>
+        <h3 style="font-size:16px;margin-top:7px">You kept the record clean</h3>
+        <p class="talk" style="font-size:13px;color:var(--muted);margin-top:5px">You told me what happened. That keeps the plan usable.</p>
+      </div>
+      <span class="pill">+${total}</span>
+    </div>
+    <div class="honesty-list">
+      ${entries.slice(0,limit).map(e=>`<div class="honesty-win">
+        <span class="honesty-icon">${ic('check',15,2,'currentColor')}</span>
+        <div style="flex:1;min-width:0"><b style="font-size:13.5px">${honestyTitle(e)} ${e.pts>0?'+':''}${e.pts}</b>
+          <div class="meta" style="margin-top:2px">${esc(e.reason||e.label)}</div></div>
+        <span class="meta" style="flex:0 0 auto">${fmtTime(e.at)}</span>
+      </div>`).join('')}
+    </div>
   </section>`;
 }
 function RewardCard(){
@@ -3250,6 +3301,7 @@ function ScreenToday(){
       ${DayRing()}
     </section>
     ${PointsStrip()}
+    ${HonestyCard(2)}
     ${RewardCard()}
     ${MacroRing()}
     ${VitalsCard()}
@@ -3949,11 +4001,12 @@ function ScreenPoints(){
       ${WeekBars()}
     </section>
     ${RewardCard()}
+    ${HonestyCard(4)}
     <section class="card">
       <div class="spread" style="margin-bottom:12px"><span class="label">Why, entry by entry</span>
         <span class="meta">${today.length} today</span></div>
       ${today.length?today.map(e=>`
-        <div class="ledger-row">
+        <div class="ledger-row ${isHonestyEntry(e)?'honesty':''}">
           <span class="ledger-pts ${e.pts>0?'pos':'neg'}">${e.pts>0?'+':''}${e.pts}</span>
           <div style="flex:1;min-width:0"><div style="font-weight:600;font-size:13.5px">${esc(e.label)}</div>
             <div class="meta" style="margin-top:2px">${esc(e.reason||'')}</div></div>
@@ -5229,6 +5282,7 @@ const ACT={
     const label=e.name;
     const loggedAt=now();
     const {ateAt,timeConfirmed}=readAteTimeInput('#estEatTime',d,loggedAt);
+    let honestEntry=null;
     if(v){
       const row=activeRows().find(r=>r.meal.id===v);
       const previous=d.logs[v];
@@ -5240,18 +5294,19 @@ const ACT={
       }
       d.logs[v]={status:'replaced',at:ateAt,ateAt,loggedAt,planned:row?row.at:ateAt,note:label,kcal,
                  macros:{kcal,p:prot,c:e.c,f:e.f,ratio:1},photo:S.ui.estPhoto||null,cls};
-      Points.award('LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} instead of ${row?row.meal.name.toLowerCase():'the planned meal'}`,ref:v});
+      honestEntry=Points.award('LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} instead of ${row?row.meal.name.toLowerCase():'the planned meal'}`,ref:v});
       if(dayDone()) closeOutDay(d);
     }else{
       d.extra=d.extra||{kcal:0,p:0,items:[]};
       d.extra.kcal+=kcal; d.extra.p+=prot;
       d.extra.items.push({name:label,kcal,p:prot,at:ateAt,ateAt,loggedAt,photo:S.ui.estPhoto||null});
-      Points.award('LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} honestly`});
+      honestEntry=Points.award('LOGGED_HONESTLY',{reason:`Logged ${label.toLowerCase()} honestly`});
     }
     S.ui.modal=null; S.ui.eatTime={}; S.ui.eatTimeFull=false; S.ui.estPhoto=null; S.ui.photoLog=defaultPhotoLog(); S.ui.estFoodResult=null;
     save(); render();
     const nx=nextRow();
-    toast(`${label} logged — ${kcal} kcal, ${prot} g protein.${nx?` Next is ${nx.meal.name.toLowerCase()} at ${fmtTime(nx.at)}.`:''}`);
+    pointsToast([honestEntry]);
+    setTimeout(()=>toast(`${label} logged — ${kcal} kcal, ${prot} g protein.${nx?` Next is ${nx.meal.name.toLowerCase()} at ${fmtTime(nx.at)}.`:''}`),700);
   },
 
   /* ---------- inventory on / off ---------- */
@@ -5367,11 +5422,12 @@ const ACT={
     }
     d.logs[v]={status:'replaced',at:ateAt,ateAt,loggedAt,planned:row?row.at:ateAt,note:name,kcal,
                macros:{kcal,p:prot,c:0,f:0,ratio:1},cls};
-    Points.award('LOGGED_HONESTLY',{reason:`Told me about ${esc(name)} instead of guessing`,ref:v});
+    const honestEntry=Points.award('LOGGED_HONESTLY',{reason:`Told me about ${esc(name)} instead of guessing`,ref:v});
     S.ui.modal=null; S.ui.eatTime={}; S.ui.eatTimeFull=false;
     if(dayDone()) archive(d);
     save(); render();
-    toast(explainShift(row,ateAt));
+    pointsToast([honestEntry]);
+    setTimeout(()=>toast(explainShift(row,ateAt)),700);
   },
 
   tprep(v){ const d=D(); if(!d) return; d.tomorrowPrep[v]=!d.tomorrowPrep[v]; save(); render(); },
@@ -5700,6 +5756,7 @@ try{ render(); }catch(e){ console.error(e); crashScreen(e); }
 setTimeout(()=>{ try{ evaluateReminders(); }catch(e){ console.error(e); } },400);
 window.AlphaCoach={get S(){return S;},PLAN,CATALOG,MEAL_LIBRARY,JUGAAD,SURPRISE,AlphaAPI,ACT,render,
   Store,Points,RULES,REWARD_TARGET,commitMeal,editAteTime,classifyLog,isOpen,isLocked,homeState,
+  isHonestyEntry,honestyEntries,honestyPoints,honestyTitle,
   eatenMacros,macrosFor,clampAte,autoResolveStale,checkStreakBreak,sessionKey,Notify,estimateMacros,
   DayRing,WeekBars,dayAxes,applyTheme,invOn,dayEndFor,sleepBound,estimateDish,DISHES,WeightTrend,
   FOOD_DB,FoodDb,estimateKcal,foodLookupOn,

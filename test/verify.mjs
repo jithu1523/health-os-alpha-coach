@@ -242,6 +242,16 @@ ok('no phantom shortages with the kitchen off', A().shortages().length === 0);
   ok('food lookup log uses the existing extra-meal path', extra.name === 'Cheese pizza (1 slice)' && extra.kcal === 285);
   ok('food lookup log still awards through the normal honest-log code',
     A().S.points.ledger.slice(before).some(e => e.code === 'LOGGED_HONESTLY'));
+  ok('honesty helper reads existing ledger entries',
+    A().honestyEntries().some(e => e.code === 'LOGGED_HONESTLY') && A().honestyPoints() >= A().RULES.LOGGED_HONESTLY.pts);
+  ok('honest logs show a points achievement toast',
+    !!doc.querySelector('.toast.pt.honesty') && /Honesty counted/.test(doc.querySelector('.toast.pt.honesty')?.textContent || ''));
+  ok('Today surfaces honesty ledger wins',
+    !!doc.querySelector('.honesty-card') && /You kept the record clean/.test(txt()));
+  click(act('go', 'points')); await wait(80);
+  ok('Discipline surfaces honesty achievements',
+    !!doc.querySelector('.honesty-card') && !!doc.querySelector('.ledger-row.honesty') && /You kept the record clean/.test(txt()));
+  click(act('go', 'today')); await wait(80);
   A().S.prefs.foodLookup = false;
 }
 {
