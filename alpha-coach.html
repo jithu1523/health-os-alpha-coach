@@ -283,29 +283,35 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .m-arc{transform-origin:150px 190px}
 .m-arc path{fill:none;stroke-linecap:round;stroke-width:11}
 .m-arc .arc-bg{stroke:var(--mascot-arc-off);opacity:.9}
-.m-arc .arc-fg{stroke:var(--accent);stroke-dasharray:1;stroke-dashoffset:calc(1 - var(--arc-p))}
+.m-arc .arc-fg{stroke:var(--accent);stroke-dasharray:1;stroke-dashoffset:calc(1 - var(--arc-p));transition:stroke-dashoffset var(--d-3) var(--ease-out), opacity var(--d-2) var(--ease)}
 .m-arc.live{animation:arcBreath 5.6s var(--ease) infinite}
 .m-arc--protein.live{animation-delay:.3s}
 .m-arc--discipline.live{animation-delay:.6s}
 @keyframes mascotBreath{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(0,-4px,0) scale(1.012)}}
 @keyframes arcBreath{0%,100%{opacity:.62;transform:scale(.97)}50%{opacity:1;transform:scale(1.018)}}
 @keyframes mascotBlink{0%,93%,100%{transform:scaleY(0)}96%{transform:scaleY(1)}}
-.m-wake .m-body{animation:mascotWake 900ms var(--ease-out) both, mascotBreath 5.6s var(--ease) 900ms infinite}
-@keyframes mascotWake{from{transform:translate3d(0,14px,0) scale(.96);opacity:.7}to{transform:none;opacity:1}}
-.m-cheer .m-body{animation:mascotCheer 700ms var(--ease-out) both, mascotBreath 5.6s var(--ease) 700ms infinite}
-@keyframes mascotCheer{0%{transform:none}38%{transform:translate3d(0,-12px,0) scale(1.03)}72%{transform:translate3d(0,2px,0) scale(.995)}100%{transform:none}}
-.m-cheer .m-arc .arc-fg{opacity:1}
-.m-concern .m-body{animation:mascotLean 2.8s var(--ease) infinite}
-@keyframes mascotLean{0%,100%{transform:rotate(0deg)}50%{transform:rotate(-1.5deg) translate3d(-2px,0,0)}}
+.m-wake .m-body{animation:mascotWake var(--d-3) var(--ease-out) both, mascotBreath 5.6s var(--ease) var(--d-3) infinite}
+@keyframes mascotWake{from{transform:translate3d(0,14px,0) scale(.96);opacity:.7}to{transform:translate3d(0,-9px,0) scale(1.015);opacity:1}}
+.m-cheer .m-body{animation:mascotCheer var(--d-2) var(--ease-out) both}
+@keyframes mascotCheer{0%{transform:none}70%{transform:translate3d(0,-14px,0) scale(1.03)}100%{transform:translate3d(0,-10px,0) scale(1.02)}}
+.m-cheer .m-arc .arc-fg{stroke:var(--lime);opacity:1}
+.m-concern .m-body{animation:mascotLean var(--d-2) var(--ease-out) both}
+@keyframes mascotLean{from{transform:none}to{transform:rotate(-1.5deg) translate3d(-2px,0,0)}}
 .m-concern .m-mouth{transform:translate3d(0,2px,0) scaleY(.75)}
+.m-concern .m-arc .arc-fg{stroke:var(--ember);opacity:1}
 .m-rest .m-body{animation:mascotBreath 8.4s var(--ease) infinite}
 .m-rest .m-lid{transform:scaleY(1);animation:none;opacity:.86}
 .m-rest .m-arc.live{animation-duration:8.4s}
 @media (prefers-reduced-motion: reduce){
-  .m-body,.m-arc.live,.m-lid{
+  .m-body,.m-arc.live,.m-lid,.m-arc .arc-fg{
     animation:none;
+    transition:none;
     transform:none;
   }
+  .m-wake .m-body{transform:translate3d(0,-9px,0) scale(1.015)}
+  .m-cheer .m-body{transform:translate3d(0,-10px,0) scale(1.02)}
+  .m-concern .m-body{transform:rotate(-1.5deg) translate3d(-2px,0,0)}
+  .m-rest .m-body{transform:translate3d(0,5px,0) scale(.985)}
   .m-arc.live{
     opacity:1;
   }
@@ -1673,7 +1679,7 @@ function defaultState(){
     workout:null, chat:[],
     ui:{screen:'today', modal:null, modalArg:null, celebrate:null, online:true, invTab:'need', shopTab:'urgent',
         eatTimeSeen:false, eatTimeFull:false, foodLookup:{mode:'manual',key:'',portion:1,result:null},
-        photoLog:defaultPhotoLog(), estFoodResult:null}
+        photoLog:defaultPhotoLog(), estFoodResult:null, mascotBeat:null}
   };
 }
 let S=Store.loadSnapshot(Store.key)||defaultState();
@@ -3007,8 +3013,26 @@ function homeState(){
   const done=activeRows().filter(r=>r.status==='done').length;
   return done===0?'morning':'waiting';
 }
+function setMascotBeat(reaction,detail=''){
+  S.ui.mascotBeat={reaction,detail,at:now()};
+}
+function activeMascotBeat(ms=1800){
+  const b=S.ui&&S.ui.mascotBeat;
+  const age=b?now()-b.at:Infinity;
+  return b&&b.reaction&&age>=0&&age<ms?b:null;
+}
+function mascotReactionFor(st,plan=sched()){
+  const beat=activeMascotBeat();
+  if(beat) return beat.reaction;
+  if(st==='daydone') return 'cheer';
+  if(st==='morning') return 'wake';
+  if(st==='overdue'||(plan&&(plan.overflow||plan.compressed))||(invOn()&&shortages().length)) return 'concern';
+  if(Points.rewardReady()||S.ui.unlocked) return 'cheer';
+  if(st==='prewake') return 'rest';
+  return 'idle';
+}
 function HeroCard(){
-  const d=D(), nx=nextRow(), st=homeState();
+  const d=D(), nx=nextRow(), st=homeState(), plan=sched();
   const meal=nx?nx.meal:null;
   const prepared=nx&&d.prep[nx.meal.id];
   const copy={
@@ -3022,6 +3046,12 @@ function HeroCard(){
   const remain=nx?nx.at-now():0;
   const countdown = nx&&nx.beyond?'Past bedtime'
     : st==='due'?'Now':st==='overdue'?`${dur(-remain)} over`:remain>0?dur(remain):'Now';
+  const mascotReaction=mascotReactionFor(st,plan);
+  const wakeBeat=activeMascotBeat();
+  const wakeLine=(st==='morning'||(wakeBeat&&wakeBeat.reaction==='wake'))?`<div class="hero-badges" style="margin-top:10px">
+    <span class="pillbadge mint">${ic('sun',13,2,'var(--ink)')} Wake ${fmtTime(d.wake)}</span>
+    <span class="pillbadge peach">${ic('refresh',13,2,'var(--ink)')} Plan rebuilt from that time</span>
+  </div>`:'';
   const pctToNext=(()=>{
     if(!nx) return 100;
     const rows=activeRows(), i=rows.indexOf(nx);
@@ -3036,7 +3066,7 @@ function HeroCard(){
       <span class="hero-count" data-clock="countdown">${countdown}</span>
     </div>
     <div class="hero-main">
-      <div class="hero-art">${Mascot({w:104,reaction:copy.react,arcs:progressLevel(),ground:false})}</div>
+      <div class="hero-art">${Mascot({w:104,reaction:mascotReaction,arcs:progressLevel(),ground:false})}</div>
       <div class="hero-body">
         <h2 class="hero-title">${esc(meal.name)}</h2>
         <p class="hero-sub">${esc(meal.slot)}</p>
@@ -3045,6 +3075,7 @@ function HeroCard(){
           <span class="pillbadge mint">${meal.p} g protein</span>
           <span class="pillbadge peach">${ic('clock',13,2,'var(--ink)')} ${meal.prepMin} min</span>
         </div>
+        ${wakeLine}
         ${meal.replacedFrom?`<button class="hero-note" data-act="modal" data-v="swapinfo" data-arg="${meal.id}">
           ${ic('swap',13)} Replaced ${esc(meal.replacedFrom.toLowerCase())} — see why</button>`:''}
       </div>
@@ -3269,7 +3300,7 @@ function ScreenToday(){
   <h2 class="bighead" style="margin-bottom:16px">Today's plan</h2>
   <div class="stack stagger">
     ${finished?`<section class="card" style="text-align:center;padding:22px 18px">
-      ${Mascot({w:104,reaction:'rest',arcs:progressLevel(),ground:false})}
+      ${Mascot({w:104,reaction:'cheer',arcs:progressLevel(),ground:false})}
       <h2 style="font-size:20px;margin-top:10px">Every meal is logged.</h2>
       <p class="talk" style="margin-top:7px;color:var(--muted);font-size:14.5px">Time to rest. Water, supplements and tomorrow's prep are still open below.</p>
       <div class="row" style="gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap">
@@ -5004,6 +5035,7 @@ const ACT={
     const ts=now(), d=blankDay(ts);
     S.days[d.key+'@'+ts]=d; S.activeDay=d.key+'@'+ts;
     checkStreakBreak();
+    setMascotBeat('wake',`Plan rebuilt from ${fmtTime(ts)}`);
     S.ui.screen='today'; save(); render();
     const nx=nextRow();
     setTimeout(()=>{
@@ -5061,6 +5093,8 @@ const ACT={
       const res=commitMeal({mealId:v, ateAt, loggedAt, use:noDeduct?[]:use, timeConfirmed});
       S.ui.celebrate=null;
       if(!res.ok){ busy.delete(v); toast(res.msg); render(); return; }
+      const hasLate=(res.entries||[]).some(e=>e&&['MEAL_LATE','LOG_LATE','LATE_CORRECTION'].includes(e.code));
+      setMascotBeat(hasLate?'concern':'cheer',hasLate?'Schedule adjusted from the stated time':'Meal logged');
       const msg=explainShift(row,ateAt);
       d.notes.push({at:now(),text:msg});
       const nx=nextRow();
@@ -5120,6 +5154,7 @@ const ACT={
     if(!Points.rewardReady()) return toast(`${REWARD_TARGET-Points.towardReward()} more points to go.`);
     const r=pickSurprise();
     if(!r) return toast('No new recipe fits your restrictions right now.');
+    setMascotBeat('cheer','Reward ready');
     S.points.pending=r; S.ui.modal='reward'; save(); render();
   },
   rewardChoice(v,n){

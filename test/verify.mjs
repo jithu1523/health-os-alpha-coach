@@ -137,6 +137,10 @@ click(act('go', 'today')); await wait(80);
 /* ------------------------------------------------------------- the day starts */
 click(act('wake')); await wait(280);
 const d = () => A().D();
+ok('wake moment shows the rebuilt anchor and wake mascot state',
+  /Wake \d/.test(txt()) &&
+  /Plan rebuilt from that time/.test(txt()) &&
+  /wake state/.test(doc.querySelector('.hero .mascot')?.getAttribute('aria-label') || ''));
 /* Pin the session to a 07:00 start so the suite is deterministic. The eating
    window closes a fixed time before the user's usual bedtime, so results would
    otherwise depend on the hour the tests happen to run. */
@@ -308,7 +312,7 @@ ok('logging out of sequence is refused', A().commitMeal({ mealId: A().sched().ro
 }
 
 /* --------------------------------------------- ate time drives the schedule */
-A().setOffset(d().wake + 150 * MIN - Date.now()); await wait(120);
+A().setOffset(A().sched().rows[0].at - Date.now()); await wait(120);
 click(act('ate', 'm1')); await wait(150);
 ok('the confirm window asks when you actually ate', !!doc.querySelector('#eatTime'));
 ok('inventory-off meal confirmation avoids stock controls',
@@ -333,6 +337,8 @@ click(act('confirmEat', 'm1')); await wait(950);
 ok('normal planned-meal confirmation still logs the meal', d().logs.m1.status === 'done');
 ok('quick-chip stated time still earns time-confirmed scoring through commitMeal',
   A().S.points.ledger.some(e => e.ref === 'm1' && e.code === 'TIME_CONFIRMED'));
+ok('logged meal triggers the cheer mascot state',
+  /cheer state/.test(doc.querySelector('.hero .mascot')?.getAttribute('aria-label') || ''));
 ok('both timestamps are stored', !!d().logs.m1.ateAt && !!d().logs.m1.loggedAt);
 ok('main confirmation stores the quick-chip time as ateAt', timeText(d().logs.m1.ateAt) === timeText(d().logs.m1.loggedAt - 15 * MIN));
 ok('next meal derives from the eating time', (() => {
@@ -483,6 +489,8 @@ ok('chat cannot mint points', (() => { const b = A().Points.lifetime(); A().pars
   ok('a late start never schedules meals overnight', s.rows.filter(r => !r.beyond).every(r => new Date(r.at).getHours() >= 6));
   ok('meals that will not fit are named as such', s.rows.some(r => r.beyond));
   ok('the day closes before bedtime', A().dayEndFor(day) <= A().sleepBound(day) + MIN);
+  ok('late compression risk uses the concern mascot state',
+    /concern state/.test(doc.querySelector('.hero .mascot')?.getAttribute('aria-label') || ''));
 }
 
 /* ------------------------------------------------------- inventory arithmetic */
@@ -789,6 +797,10 @@ ok('reduced motion removes looping motion while preserving state feedback',
   /\.meal\[data-state="due"\] \.meal-dot\{animation:none!important;box-shadow/.test(html) &&
   /\.track > i,\.geo-rail > i,\.hero-rail > i\{transition:none!important\}/.test(html) &&
   /transition-property:background,border-color,color,opacity,box-shadow/.test(html));
+ok('reduced motion keeps static mascot milestone expressions',
+  /\.m-wake \.m-body\{transform:translate3d\(0,-9px,0\) scale\(1\.015\)\}/.test(html) &&
+  /\.m-cheer \.m-body\{transform:translate3d\(0,-10px,0\) scale\(1\.02\)\}/.test(html) &&
+  /\.m-concern \.m-body\{transform:rotate\(-1\.5deg\) translate3d\(-2px,0,0\)\}/.test(html));
 ok('toast region announces updates politely',
   !!doc.querySelector('#toasts[role="status"][aria-live="polite"]'));
 click(act('go', 'today')); await wait(80);
