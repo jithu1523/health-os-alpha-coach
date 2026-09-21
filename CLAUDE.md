@@ -6,6 +6,9 @@ The two carry the same rules — if you change one, change the other.
 Every agent in this office reads this file first. It is the shared ground truth.
 If something here is wrong, fix it here rather than working around it.
 
+**Repository:** the working and default branch is `main` (GitHub `jithu1523/health-os-alpha-coach`).
+Open pull requests against `main`. (`master` was retired 2026-09-21.)
+
 ## The product
 
 Alpha Coach is an adaptive nutrition and discipline coach. One HTML file, no build

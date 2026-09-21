@@ -3,6 +3,9 @@
 **Codex, OpenCode and Copilot read this file. Claude Code reads `CLAUDE.md`.**
 They carry the same rules. If you change one, change the other.
 
+**Repository:** the working and default branch is `main` (GitHub `jithu1523/health-os-alpha-coach`).
+Open pull requests against `main`. (`master` was retired 2026-09-21.)
+
 The skills below live in `.claude/skills/` and are **not auto-loaded outside Claude
 Code** — read the ones relevant to your task by hand. They are short and they encode
 things that will otherwise cost you hours.
