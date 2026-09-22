@@ -205,6 +205,14 @@ ok('no phantom shortages with the kitchen off', A().shortages().length === 0);
   };
   const variants = new Set(['2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23'].map(namesFor));
   ok('meal variety rotates the derived plan across day keys', variants.size > 1, [...variants].join(' / '));
+  const rotationDays = ['2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23', '2026-08-24'];
+  const templatesByDay = rotationDays.map(key => {
+    d().key = key;
+    return A().MEALS().map(m => m.altId || m.name);
+  });
+  ok('meal variety avoids same-slot template repeats on adjacent days',
+    templatesByDay.every((plan, dayIndex) => dayIndex === 0 || plan.every((template, slotIndex) => template !== templatesByDay[dayIndex - 1][slotIndex])),
+    JSON.stringify(templatesByDay));
   const rotationKey = ['2026-08-20', '2026-08-21', '2026-08-22', '2026-08-23']
     .find(key => { d().key = key; return A().MEALS().some(m => m.variedFrom); });
   ok('meal variety can surface a rotated meal', !!rotationKey);
@@ -213,6 +221,11 @@ ok('no phantom shortages with the kitchen off', A().shortages().length === 0);
     A().render(); await wait(80);
     ok('meal variety is disclosed on the plan', /Rotated from/.test(txt()));
   }
+  const swapPoolKey = Array.from({ length: 30 }, (_, i) => {
+    const day = new Date('2026-08-20T12:00:00'); day.setDate(day.getDate() + i);
+    return day.toISOString().slice(0, 10);
+  }).find(key => { d().key = key; return A().MEALS().some(m => /^j\d+$/.test(m.altId || '')); });
+  ok('meal variety can rotate through the rule-based swap pool', !!swapPoolKey);
   d().key = originalKey;
   A().render(); await wait(80);
 

@@ -1272,13 +1272,45 @@ function varietyHash(s){
   for(const ch of String(s||'')){ h^=ch.charCodeAt(0); h=Math.imul(h,16777619); }
   return h>>>0;
 }
+function shiftDayKey(key,days){
+  const d=new Date(`${key||dayKey(now())}T12:00:00`);
+  if(Number.isNaN(d.getTime())) return dayKey(now());
+  d.setDate(d.getDate()+days);
+  return dayKey(d.getTime());
+}
+function rotationTemplateId(m){ return m.altId||m.id||m.name; }
+function rawVariantIndex(key,index,pool){
+  return (varietyHash(`${key}:${index}`)+index*17)%pool.length;
+}
+function rotationIndex(key,index,pool,depth=0){
+  let pick=rawVariantIndex(key,index,pool);
+  if(pool.length>1&&depth<10){
+    const prevPick=rotationIndex(shiftDayKey(key,-1),index,pool,depth+1);
+    if(rotationTemplateId(pool[pick])===rotationTemplateId(pool[prevPick])){
+      pick=(pick+1+((varietyHash(`${key}:rotate:${index}`)%(pool.length-1))))%pool.length;
+    }
+  }
+  return pick;
+}
+function closeSwapVariants(m){
+  const defaults={storage:'Best made fresh.',reheat:'Reheat gently if needed.'};
+  return JUGAAD.map(a=>Object.assign({},defaults,a,{
+      id:m.id,slot:m.slot,gap:m.gap,variedFrom:m.name,altId:a.id,rotationSource:'swap',
+      steps:a.steps||[`Prepare ${a.name.toLowerCase()} with the listed ingredients.`]
+    }))
+    .filter(likedOk)
+    .sort((a,b)=>scoreAlt(a,m)-scoreAlt(b,m))
+    .slice(0,2);
+}
 function slotVariants(m){
-  return [m,...(MEAL_LIBRARY[m.id]||[]).map(a=>Object.assign({},a,{id:m.id,slot:m.slot,gap:m.gap,variedFrom:m.name,altId:a.id}))];
+  const library=(MEAL_LIBRARY[m.id]||[]).map(a=>Object.assign({},a,{id:m.id,slot:m.slot,gap:m.gap,variedFrom:m.name,altId:a.id,rotationSource:'library'}));
+  return [m,...library,...closeSwapVariants(m)];
 }
 function variedMeal(m,index){
   const variants=slotVariants(m).filter(likedOk);
   const pool=variants.length?variants:[m];
-  return pool[(varietyHash(varietyKey())+index*17)%pool.length];
+  const key=varietyKey();
+  return pool[rotationIndex(key,index,pool)];
 }
 function MEALS(){
   return PLAN.meals.map((m,index)=>{
