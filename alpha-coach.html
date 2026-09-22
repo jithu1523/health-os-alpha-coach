@@ -368,16 +368,21 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .modal-x:hover{background:var(--surface-2)}
 
 /* toasts */
-.toasts{position:fixed;z-index:90;left:50%;bottom:24px;transform:translateX(-50%);display:flex;flex-direction:column-reverse;gap:8px;align-items:center;pointer-events:none;width:calc(100% - 32px);max-width:420px}
+.toasts{position:fixed;z-index:90;top:calc(14px + env(safe-area-inset-top,0px));right:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none;width:calc(100% - 32px);max-width:380px}
 .toast{
-  display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-radius:16px;width:100%;
+  display:flex;align-items:flex-start;gap:10px;padding:12px 12px 12px 14px;border-radius:14px;width:100%;
   background:var(--ink);color:#fff;font-family:var(--f-talk);font-weight:500;font-size:14px;line-height:1.45;
-  animation:toastIn var(--d-3) var(--ease-out) both;will-change:transform,opacity;
+  animation:toastIn var(--d-3) var(--ease-out) both;will-change:transform,opacity;pointer-events:auto;box-shadow:0 14px 32px rgba(20,24,23,.18);
 }
 .toast.out{animation:toastOut var(--d-2) var(--ease) both}
-@keyframes toastIn{from{opacity:0;transform:translate3d(0,14px,0) scale(.97)}to{opacity:1;transform:none}}
-@keyframes toastOut{to{opacity:0;transform:translate3d(0,8px,0) scale(.98)}}
+@keyframes toastIn{from{opacity:0;transform:translate3d(0,-8px,0) scale(.985)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translate3d(0,-6px,0) scale(.99)}}
 .toast .tdot{width:7px;height:7px;border-radius:99px;background:var(--accent);margin-top:7px;flex:0 0 auto}
+.toast-msg{min-width:0;flex:1}
+.toast-x{width:28px;height:28px;margin:-4px -4px -4px 2px;border:0;border-radius:8px;background:transparent;color:rgba(255,255,255,.78);display:grid;place-items:center;cursor:pointer;flex:0 0 auto;transition:background var(--d-1),color var(--d-1)}
+.toast-x:hover{background:rgba(255,255,255,.12);color:#fff}
+.field-feedback{font-family:var(--f-talk);font-size:12.5px;line-height:1.45;margin-top:7px;color:var(--muted)}
+.field-feedback.error{color:var(--warn)}
 
 /* mascot speech */
 .say{
@@ -1723,7 +1728,7 @@ function defaultState(){
     workout:null, chat:[],
     ui:{screen:'today', modal:null, modalArg:null, celebrate:null, online:true, invTab:'need', shopTab:'urgent',
         eatTimeSeen:false, eatTimeFull:false, foodLookup:{mode:'manual',key:'',portion:1,result:null},
-        photoLog:defaultPhotoLog(), estFoodResult:null, mascotBeat:null}
+        photoLog:defaultPhotoLog(), estFoodResult:null, mascotBeat:null, feedback:{}}
   };
 }
 let S=Store.loadSnapshot(Store.key)||defaultState();
@@ -1767,6 +1772,7 @@ const STATE_VERSION=3;
   S.obStep=Number.isInteger(S.obStep)?S.obStep:0;
   S.onboarded=!!S.onboarded;
   S.ui=Object.assign(d.ui,S.ui||{},{modal:null,modalArg:null,celebrate:null});
+  if(!S.ui.feedback||typeof S.ui.feedback!=='object') S.ui.feedback={};
   S.ui.photoLog=Object.assign(defaultPhotoLog(),S.ui.photoLog||{});
   if(!Array.isArray(S.ui.photoLog.top)) S.ui.photoLog.top=[];
   if(typeof S.ui.photoLog.portion!=='number'||S.ui.photoLog.portion<=0) S.ui.photoLog.portion=1;
@@ -2353,9 +2359,18 @@ function explainShift(prevRow, justLoggedAt){
    permission plumbing is the same one a service worker would reuse. */
 const Notify={
   timers:[],
-  sw:{state:'idle',detail:'Not attempted yet.',script:'alpha-coach-sw.js'},
-  supported(){ return typeof Notification!=='undefined'; },
-  get status(){ return this.supported()?Notification.permission:'unsupported'; },
+  sw:{state:'idle',detail:'Not attempted yet.',script:'/alpha-coach-sw.js',registration:null},
+  workerNotificationSupported(){
+    return typeof ServiceWorkerRegistration!=='undefined'&&
+      ServiceWorkerRegistration.prototype&&
+      typeof ServiceWorkerRegistration.prototype.showNotification==='function';
+  },
+  supported(){ return typeof Notification!=='undefined'||this.workerNotificationSupported(); },
+  permission(){
+    if(typeof Notification!=='undefined'&&'permission' in Notification) return Notification.permission;
+    return this.workerNotificationSupported()?'default':'unsupported';
+  },
+  get status(){ return this.supported()?this.permission():'unsupported'; },
   canServeInBackground(){
     return typeof navigator!=='undefined'&&!!navigator.serviceWorker&&typeof location!=='undefined'&&/^https?:$/.test(location.protocol)&&location.protocol!=='file:';
   },
@@ -2364,13 +2379,13 @@ const Notify={
   },
   async registerServiceWorker(){
     if(!this.canServeInBackground()){
-      this.sw={...this.sw,state:'local',detail:'Local-file or unsupported browser. Keep the tab open for reminders.'};
+      this.sw={...this.sw,state:'local',detail:'Serve this copy over https to let the service worker display reminders.'};
       return false;
     }
     if(this.sw.state==='ready') return true;
     try{
       const reg=await navigator.serviceWorker.register(this.swUrl(),{scope:'./'});
-      this.sw={...this.sw,state:'ready',detail:'Service worker registered for this served copy.',scope:reg&&reg.scope};
+      this.sw={...this.sw,state:'ready',detail:'Service worker registered for browser reminders.',scope:reg&&reg.scope,registration:reg};
       return true;
     }catch(e){
       this.sw={...this.sw,state:'fallback',detail:'Service worker registration failed. Reminders use this tab until the served worker file is available.',error:String(e&&e.message||e)};
@@ -2379,6 +2394,7 @@ const Notify={
   },
   async ask(){
     if(!this.supported()) return 'unsupported';
+    if(typeof Notification==='undefined'||typeof Notification.requestPermission!=='function') return 'unsupported';
     if(Notification.permission==='granted') return 'granted';
     try{ return await Notification.requestPermission(); }catch(e){ return 'denied'; }
   },
@@ -2429,9 +2445,19 @@ const Notify={
   },
   send(title, body){
     if(!S.notify) return false;
-    if(!this.supported()||Notification.permission!=='granted') return false;
+    if(!this.supported()||this.permission()!=='granted') return false;
     if(typeof document!=='undefined'&&document.visibilityState==='visible') return false;
-    try{ new Notification(title,{body,tag:'alpha-coach',icon:undefined}); return true; }
+    const opts={body,tag:'alpha-coach',icon:undefined};
+    const reg=this.sw&&this.sw.registration;
+    try{
+      if(reg&&typeof reg.showNotification==='function'){ reg.showNotification(title,opts); return true; }
+      if(this.workerNotificationSupported()&&typeof navigator!=='undefined'&&navigator.serviceWorker&&navigator.serviceWorker.ready){
+        navigator.serviceWorker.ready.then(r=>{ if(r&&typeof r.showNotification==='function') return r.showNotification(title,opts); }).catch(()=>{});
+        return true;
+      }
+      if(typeof Notification!=='undefined'){ new Notification(title,opts); return true; }
+      return false;
+    }
     catch(e){ return false; }
   }
 };
@@ -2951,6 +2977,27 @@ function answerQuery(topic){
 }
 const IN_SCOPE=/meal|eat|ate|food|breakfast|lunch|dinner|snack|inventory|stock|grocer|buy|shop|protein|calorie|kcal|macro|supplement|creatine|vitamin|workout|train|gym|water|sleep|wake|awake|schedule|plan|point|score|streak|reward|prep|recipe|like|dislike|allerg|weight|goal|chicken|egg|rice|paneer|oats|dal|lentil|yogurt|curd|whey|banana|spinach|salad|day|time|log/i;
 
+function feedbackBag(){
+  S.ui.feedback=S.ui.feedback&&typeof S.ui.feedback==='object'?S.ui.feedback:{};
+  return S.ui.feedback;
+}
+function setFeedback(key,text,kind='error'){
+  const bag=feedbackBag();
+  if(text) bag[key]={text,kind,at:now()}; else delete bag[key];
+}
+function clearFeedback(key){ delete feedbackBag()[key]; }
+function fieldFeedback(key){
+  const f=feedbackBag()[key];
+  return f&&f.text?`<p class="field-feedback ${esc(f.kind||'error')}" id="${esc(key)}Feedback" role="alert">${esc(f.text)}</p>`:'';
+}
+function dismissToast(n){
+  if(!n||n.classList.contains('out')) return;
+  n.classList.add('out');
+  setTimeout(()=>n.remove(),280);
+}
+function toastClose(){
+  return `<button class="toast-x" type="button" data-act="toastDismiss" aria-label="Dismiss message">&times;</button>`;
+}
 function pointsToast(entries){
   (entries||[]).filter(Boolean).forEach((e,i)=>{
     setTimeout(()=>{
@@ -2958,10 +3005,10 @@ function pointsToast(entries){
       const n=document.createElement('div');
       const honest=isHonestyEntry(e);
       n.className='toast pt '+(e.pts>0?'pos':'neg')+(honest?' honesty':'');
-      n.innerHTML=`<span class="pt-badge">${e.pts>0?'+':''}${e.pts}</span><span>${esc(honest?honestyText(e):(e.reason||e.label))}</span>`;
+      n.innerHTML=`<span class="pt-badge">${e.pts>0?'+':''}${e.pts}</span><span class="toast-msg">${esc(honest?honestyText(e):(e.reason||e.label))}</span>${toastClose()}`;
       box.appendChild(n);
-      setTimeout(()=>{n.classList.add('out');setTimeout(()=>n.remove(),280);},3200);
-      while(box.children.length>4) box.firstElementChild.remove();
+      setTimeout(()=>dismissToast(n),3200);
+      while(box.children.length>3) box.firstElementChild.remove();
     }, i*260);
   });
 }
@@ -2969,11 +3016,13 @@ function pointsToast(entries){
 /* ---------- toast ---------- */
 function toast(msg){
   const box=$('#toasts'); if(!box) return;
+  [...box.querySelectorAll('.toast:not(.pt)')].forEach(n=>n.remove());
   const n=document.createElement('div');
-  n.className='toast'; n.innerHTML=`<span class="tdot"></span><span>${msg}</span>`;
+  n.className='toast'; n.innerHTML=`<span class="tdot"></span><span class="toast-msg">${esc(msg)}</span>${toastClose()}`;
   box.appendChild(n);
-  setTimeout(()=>{n.classList.add('out');setTimeout(()=>n.remove(),280);},4200);
+  setTimeout(()=>dismissToast(n),3600);
   while(box.children.length>3) box.firstElementChild.remove();
+  return n;
 }
 /* ===========================================================================
    SHARED PIECES
@@ -4014,15 +4063,16 @@ function ScreenSettings(){
         <div style="min-width:0">
           <div style="font-weight:600;font-size:14px">Notify me outside the app</div>
           <p class="talk" style="font-size:13px;color:var(--muted);margin-top:4px">
-            ${Notify.status==='unsupported'?'This browser does not support notifications.'
+            ${Notify.status==='unsupported'?'Notifications are unavailable in this browser.'
               :S.notify&&Notify.status==='granted'?'On — meal reminders arrive while this tab sits in the background.'
               :'Off — reminders only appear while the app is open.'}</p>
           ${!Notify.canServeInBackground()?`<p class="talk" style="font-size:12.5px;color:var(--faint);margin-top:6px">
-            Opened as a local file, so the tab has to stay open. Serve it over https and a service worker can wake it fully closed.</p>`:''}
+            Opened as a local file, so the tab has to stay open. Serve it over https to let the service worker display browser reminders.</p>`:''}
           ${Notify.settingsNote()?`<p class="talk" style="font-size:12.5px;color:var(--faint);margin-top:6px">${esc(Notify.settingsNote())}</p>`:''}
           ${Notify.canServeInBackground()?`<p class="talk" style="font-size:12.5px;color:var(--faint);margin-top:6px">${esc(Notify.sw.detail)}</p>`:''}
+          ${fieldFeedback('notify')}
         </div>
-        <button class="btn sm ${S.notify?'':'primary'}" data-act="toggleNotify" ${Notify.status==='unsupported'?'disabled':''}>
+        <button class="btn sm ${S.notify?'':'primary'}" data-act="toggleNotify" ${S.ui.feedback&&S.ui.feedback.notify?'aria-describedby="notifyFeedback"':''} ${Notify.status==='unsupported'?'disabled':''}>
           ${S.notify?'Turn off':'Turn on'}</button>
       </div>
     </section>
@@ -5454,10 +5504,17 @@ const ACT={
     toast(`${r.it.name} ${fmtQty(r.it.base,r.before)} → ${fmtQty(r.it.base,r.after)}.`);
   },
   async toggleNotify(){
+    clearFeedback('notify');
     if(S.notify){ S.notify=false; Notify.clearSchedule(); save(); render(); toast('Reminders will stay inside the app.'); return; }
     const r=await Notify.ask();
-    if(r!=='granted'){ toast(r==='unsupported'?'This browser does not support notifications.':'Permission declined — reminders stay in-app.'); return; }
+    if(r!=='granted'){
+      setFeedback('notify',r==='unsupported'
+        ? 'This browser cannot request notification permission from here. Serve the app over https and use a browser with notification permission support.'
+        : 'Permission declined. Reminders stay in-app.');
+      save(); render(); return;
+    }
     await Notify.registerServiceWorker();
+    clearFeedback('notify');
     S.notify=true; save(); render();
     Notify.schedule();
     Notify.send('Alpha Coach','Reminders are on. You will hear from me before each meal.');
@@ -5775,6 +5832,7 @@ function snapshotForAI(){
 document.addEventListener('click',e=>{
   const n=e.target.closest('[data-act]'); if(!n) return;
   const a=n.dataset.act;
+  if(a==='toastDismiss'){ dismissToast(n.closest('.toast')); return; }
   if(ACT[a]) ACT[a](n.dataset.v,n,e);
 });
 const NUM_PREFS=['kcal','protein','carbs','fat','prepTime'];

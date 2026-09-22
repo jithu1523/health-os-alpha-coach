@@ -178,13 +178,19 @@ ok('no phantom shortages with the kitchen off', A().shortages().length === 0);
     JSON.stringify(plan.slice(0, 3)));
   const oldNotification = W.Notification;
   const oldServiceWorker = W.navigator.serviceWorker;
+  const oldSwRegistration = W.ServiceWorkerRegistration;
   const registered = [];
+  const shown = [];
   class MockNotification { constructor(title, opts) { registered.push({ title, opts }); } }
   MockNotification.permission = 'default';
   MockNotification.requestPermission = async () => { MockNotification.permission = 'granted'; return 'granted'; };
+  class MockSwRegistration {}
+  MockSwRegistration.prototype.showNotification = function(title, opts) { shown.push({ title, opts }); };
   W.Notification = MockNotification;
+  W.ServiceWorkerRegistration = MockSwRegistration;
+  const reg = { scope: './', showNotification: (title, opts) => shown.push({ title, opts }) };
   Object.defineProperty(W.navigator, 'serviceWorker', {
-    value: { register: async (url, opts) => { registered.push({ url, opts }); return { scope: opts.scope }; } },
+    value: { register: async (url, opts) => { registered.push({ url, opts }); return reg; }, ready: Promise.resolve(reg) },
     configurable: true
   });
   ok('notification settings explain derived scheduling', /wake-derived|derive reminder times/.test(A().Notify.settingsNote()), A().Notify.settingsNote());
@@ -201,9 +207,61 @@ ok('no phantom shortages with the kitchen off', A().shortages().length === 0);
     `scheduled=${scheduled.length} timers=${A().Notify.timers.length}`);
   A().Notify.clearSchedule();
   ok('notification timers can be cleared on opt-out', A().Notify.timers.length === 0);
+  Object.defineProperty(doc, 'visibilityState', { value: 'hidden', configurable: true });
+  ok('served reminders use the service worker notification channel',
+    A().Notify.send('Time to eat', 'Test meal') === true &&
+    shown.some(x => x.title === 'Time to eat' && x.opts && x.opts.body === 'Test meal'),
+    JSON.stringify(shown));
+  Object.defineProperty(doc, 'visibilityState', { value: 'visible', configurable: true });
   A().S.notify = false;
   if (oldNotification === undefined) delete W.Notification; else W.Notification = oldNotification;
+  if (oldSwRegistration === undefined) delete W.ServiceWorkerRegistration; else W.ServiceWorkerRegistration = oldSwRegistration;
   Object.defineProperty(W.navigator, 'serviceWorker', { value: oldServiceWorker, configurable: true });
+}
+{
+  const oldNotification = W.Notification;
+  const oldServiceWorker = W.navigator.serviceWorker;
+  const oldSwRegistration = W.ServiceWorkerRegistration;
+  delete W.Notification;
+  class MockSwRegistration {}
+  MockSwRegistration.prototype.showNotification = function() {};
+  W.ServiceWorkerRegistration = MockSwRegistration;
+  Object.defineProperty(W.navigator, 'serviceWorker', {
+    value: { register: async () => ({ scope: './', showNotification() {} }), ready: Promise.resolve({ showNotification() {} }) },
+    configurable: true
+  });
+  const prevOnboarded = A().S.onboarded;
+  const prevScreen = A().S.ui.screen;
+  A().S.onboarded = true;
+  A().S.ui.screen = 'settings';
+  A().S.notify = false;
+  A().S.ui.feedback = {};
+  A().render();
+  await wait(80);
+  ok('service-worker notification support is detected without window Notification',
+    A().Notify.supported() === true && A().Notify.status === 'default' &&
+    !/Notifications are unavailable/.test(txt()) && act('toggleNotify') && !act('toggleNotify').disabled,
+    `supported=${A().Notify.supported()} status=${A().Notify.status} text=${txt().slice(0, 120)}`);
+  class DeniedNotification {}
+  DeniedNotification.permission = 'default';
+  DeniedNotification.requestPermission = async () => 'denied';
+  W.Notification = DeniedNotification;
+  doc.querySelector('#toasts').innerHTML = '';
+  await A().ACT.toggleNotify();
+  await wait(80);
+  ok('notification permission errors render beside the source control',
+    /Permission declined/.test(doc.querySelector('#notifyFeedback[role="alert"]')?.textContent || ''));
+  ok('notification permission errors do not create global toasts',
+    doc.querySelectorAll('#toasts .toast').length === 0,
+    `toasts=${doc.querySelectorAll('#toasts .toast').length}`);
+  if (oldNotification === undefined) delete W.Notification; else W.Notification = oldNotification;
+  if (oldSwRegistration === undefined) delete W.ServiceWorkerRegistration; else W.ServiceWorkerRegistration = oldSwRegistration;
+  Object.defineProperty(W.navigator, 'serviceWorker', { value: oldServiceWorker, configurable: true });
+  A().S.onboarded = prevOnboarded;
+  A().S.ui.screen = prevScreen;
+  A().S.ui.feedback = {};
+  A().render();
+  await wait(80);
 }
 {
   const originalKey = d().key;
@@ -826,6 +884,26 @@ ok('reduced motion removes wake redraw travel while keeping the facts visible',
   /prefers-reduced-motion: reduce[\s\S]*\.wake-derive-card,\.wake-derive-row[\s\S]*animation:none!important/.test(html));
 ok('toast region announces updates politely',
   !!doc.querySelector('#toasts[role="status"][aria-live="polite"]'));
+ok('toast tray is no longer a bottom-screen stack',
+  /\.toasts\{[^}]*top:/.test(html) && !/\.toasts\{[^}]*bottom:24px/.test(html));
+{
+  const box = doc.querySelector('#toasts');
+  box.innerHTML = '';
+  A().ACT.theme('ember');
+  await wait(60);
+  A().ACT.theme('grove');
+  await wait(60);
+  ok('transient toasts replace the prior message instead of stacking',
+    box.querySelectorAll('.toast:not(.pt)').length === 1,
+    `toasts=${box.querySelectorAll('.toast:not(.pt)').length}`);
+  ok('transient toasts include a manual dismiss button',
+    !!box.querySelector('.toast:not(.pt) [data-act="toastDismiss"][aria-label="Dismiss message"]'));
+  click(box.querySelector('.toast:not(.pt) [data-act="toastDismiss"]'));
+  await wait(340);
+  ok('transient toasts are manually dismissible',
+    box.querySelectorAll('.toast:not(.pt)').length === 0,
+    `toasts=${box.querySelectorAll('.toast:not(.pt)').length}`);
+}
 click(act('go', 'today')); await wait(80);
 ok('day progress ring exposes status by axis',
   /Meals \d+ percent/.test(doc.querySelector('.dayring svg')?.getAttribute('aria-label') || ''));
