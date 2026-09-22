@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="840" viewBox="0 0 1400 840" role="img" aria-labelledby="title desc">
+  <title id="title">Alpha Coach onboarding wake recalculation moment</title>
+  <desc id="desc">Static design comp showing the visual sequence after tapping I'm awake: press, anchor, meal plan redraw, and confirmation.</desc>
+  <style>
+    :root {
+      --bg: #F2F4E8;
+      --surface: #FFFFFF;
+      --surface-2: #F4F6EC;
+      --ink: #141A0F;
+      --ink-2: #3E463A;
+      --muted: #727A6B;
+      --line: rgba(20,26,15,.12);
+      --accent: #2F5D34;
+      --accent-ink: #1D3D21;
+      --accent-soft: rgba(47,93,52,.08);
+      --accent-line: rgba(47,93,52,.20);
+      --lime: #C6E85C;
+      --ember: #C85E2C;
+      --peach: #F8CDA0;
+    }
+    text { font-family: "DM Sans", Arial, sans-serif; fill: var(--ink); }
+    .page { fill: var(--bg); }
+    .phone { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+    .screen { fill: var(--bg); }
+    .card { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+    .primary { fill: var(--accent); }
+    .primaryText { fill: white; font-weight: 900; }
+    .kicker { fill: var(--ember); font-size: 13px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    .title { font-size: 34px; font-weight: 900; letter-spacing: -.04em; }
+    .label { font-size: 19px; font-weight: 900; letter-spacing: -.02em; }
+    .body { fill: var(--muted); font-size: 14px; font-weight: 650; }
+    .time { font-size: 22px; font-weight: 900; fill: var(--accent-ink); }
+    .meal { font-size: 15px; font-weight: 900; }
+    .hint { fill: var(--muted); font-size: 12px; font-weight: 700; }
+    .rail { fill: var(--surface-2); }
+    .railOn { fill: var(--accent); }
+    .arc { fill: none; stroke: var(--accent); stroke-width: 9; stroke-linecap: round; }
+    .arcBg { fill: none; stroke: var(--line); stroke-width: 9; stroke-linecap: round; }
+    .ghost { opacity: .36; }
+    .arrow { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+  <rect class="page" width="1400" height="840"/>
+  <text class="kicker" x="64" y="72">Alpha Coach design comp</text>
+  <text class="title" x="64" y="112">Onboarding wake moment: dramatize recalculation</text>
+  <text class="body" x="64" y="142">The animation should make one fact obvious: meal times are derived from the timestamp the user just created.</text>
+
+  <g transform="translate(72 196)">
+    <rect class="phone" width="272" height="520" rx="34"/>
+    <rect class="screen" x="16" y="16" width="240" height="488" rx="24"/>
+    <text class="label" x="38" y="76">Good morning</text>
+    <text class="body" x="38" y="108">Your day has not started.</text>
+    <circle cx="136" cy="202" r="54" fill="var(--peach)" stroke="var(--accent-ink)" stroke-width="2"/>
+    <path d="M106 202l24-12 26 11-25 13-25-12Z" fill="var(--lime)" stroke="var(--accent-ink)" stroke-width="2"/>
+    <path d="M146 202l26-12 24 12-25 12-25-12Z" fill="var(--lime)" stroke="var(--accent-ink)" stroke-width="2"/>
+    <path d="M121 232c10 7 28 7 39 0" class="arrow"/>
+    <rect class="primary" x="38" y="336" width="196" height="52" rx="18"/>
+    <text class="primaryText" x="82" y="369">I'm awake</text>
+    <text class="hint" x="38" y="424">Press feedback within 100ms.</text>
+    <text class="hint" x="38" y="446">Button stays the visual cause.</text>
+    <text class="kicker" x="38" y="482">01 tap</text>
+  </g>
+
+  <path class="arrow" d="M376 456h72m-16-16 16 16-16 16"/>
+
+  <g transform="translate(480 196)">
+    <rect class="phone" width="272" height="520" rx="34"/>
+    <rect class="screen" x="16" y="16" width="240" height="488" rx="24"/>
+    <text class="label" x="38" y="76">Wake anchor</text>
+    <text class="time" x="38" y="124">8:24</text>
+    <path class="arcBg" d="M78 214A58 58 0 0 1 194 214"/>
+    <path class="arc" d="M78 214A58 58 0 0 1 194 214"/>
+    <circle cx="136" cy="214" r="16" fill="var(--lime)" stroke="var(--accent-ink)" stroke-width="2"/>
+    <rect class="card" x="38" y="296" width="196" height="70" rx="18"/>
+    <text class="meal" x="58" y="326">Plan anchor set</text>
+    <text class="hint" x="58" y="350">All rows derive from this.</text>
+    <text class="hint" x="38" y="424">One visible timestamp becomes</text>
+    <text class="hint" x="38" y="446">the source of truth.</text>
+    <text class="kicker" x="38" y="482">02 anchor</text>
+  </g>
+
+  <path class="arrow" d="M784 456h72m-16-16 16 16-16 16"/>
+
+  <g transform="translate(888 196)">
+    <rect class="phone" width="272" height="520" rx="34"/>
+    <rect class="screen" x="16" y="16" width="240" height="488" rx="24"/>
+    <text class="label" x="38" y="76">Derived plan</text>
+    <g class="ghost">
+      <rect class="card" x="38" y="112" width="196" height="56" rx="16"/>
+      <text class="meal" x="58" y="146">08:00 Breakfast</text>
+    </g>
+    <rect class="card" x="38" y="192" width="196" height="64" rx="18"/>
+    <text class="time" x="58" y="226">09:05</text>
+    <text class="meal" x="142" y="222">Breakfast</text>
+    <rect class="card" x="38" y="270" width="196" height="64" rx="18"/>
+    <text class="time" x="58" y="304">13:30</text>
+    <text class="meal" x="142" y="300">Lunch</text>
+    <rect class="card" x="38" y="348" width="196" height="64" rx="18"/>
+    <text class="time" x="58" y="382">19:20</text>
+    <text class="meal" x="142" y="378">Dinner</text>
+    <text class="hint" x="38" y="450">Rows redraw as one set.</text>
+    <text class="kicker" x="38" y="482">03 redraw</text>
+  </g>
+
+  <g transform="translate(1194 196)">
+    <rect class="phone" width="146" height="520" rx="34"/>
+    <rect class="screen" x="12" y="16" width="122" height="488" rx="24"/>
+    <rect class="card" x="26" y="72" width="94" height="120" rx="18"/>
+    <text class="time" x="42" y="118">09:05</text>
+    <text class="hint" x="42" y="146">First meal</text>
+    <rect class="primary" x="26" y="226" width="94" height="48" rx="16"/>
+    <text class="primaryText" x="42" y="256">Ready</text>
+    <text class="hint" x="24" y="334">Toast confirms</text>
+    <text class="hint" x="24" y="354">the next action.</text>
+    <text class="kicker" x="24" y="482">04 confirm</text>
+  </g>
+</svg>

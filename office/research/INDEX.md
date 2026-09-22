@@ -4,6 +4,7 @@ Every note lives here. Newest first. One line each — the decision, not the top
 
 | Date | Note | Decision | Status |
 |---|---|---|---|
+| 2026-09-21 | [Do not auto-fill wake time inside the single HTML app; test a native bridge first](health-platform-integrations.md) | Do not build Apple Health or Health Connect wake auto-fill directly into `alpha-coach.html`; first run a local-only native bridge spike, starting with Android Health Connect, and keep imported wake time user-confirmed. | proposed |
 | 2026-08-21 | [Cal-AI-grade food photo logging needs broader data and likely server mode](competitive-and-sota-food-recognition.md) | Keep Food-101 ONNX as privacy-first fallback, evaluate cloud/multimodal or larger native/server models for parity, and download Nutrition5k/Food-101 first before Food2K/ISIA pending license and compute approval. | proposed |
 | 2026-08-20 | [Expand the food DB from open prepared-food sources](fooddb-expansion-sources.md) | Derive everyday prepared foods from USDA FNDDS/FDC first, use Open Food Facts for packaged/barcode rows with ODbL tracking, and fix fuzzy matching so weak-token near misses ask instead of returning hamburger for chicken sandwich. | proposed |
 | 2026-08-20 | [Make marketing V2 feel premium through product-specific craft](premium-web-craft.md) | Build around a real interactive SVG ring, reactive vector mascot, restrained Grove/Ember-derived depth, and Lenis/Motion with optional Pixi/Three for one hero-grade scene; reject generic AI-gradient/card design. | proposed |
