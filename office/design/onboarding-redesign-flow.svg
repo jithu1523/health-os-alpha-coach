@@ -1,0 +1,187 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="980" viewBox="0 0 1440 980" role="img" aria-labelledby="title desc">
+  <title id="title">Goal-first onboarding redesign flow</title>
+  <desc id="desc">A flow diagram for Alpha Coach onboarding, starting with goal, then person, tastes, plan fit, stock, quantity ownership, and wake handoff.</desc>
+  <style>
+    :root {
+      --ground: Canvas;
+      --surface: Canvas;
+      --ink: CanvasText;
+      --muted: GrayText;
+      --line: color-mix(in srgb, CanvasText 18%, Canvas);
+      --accent: Highlight;
+      --accent-ink: HighlightText;
+      --lime: Mark;
+      --soft: color-mix(in srgb, Highlight 10%, Canvas);
+      --soft-2: color-mix(in srgb, Mark 26%, Canvas);
+      --warn: color-mix(in srgb, Highlight 28%, Canvas);
+      --shadow: color-mix(in srgb, CanvasText 12%, transparent);
+      color-scheme: light dark;
+    }
+    * { box-sizing: border-box; }
+    svg { background: var(--ground); color: var(--ink); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .title { font-size: 38px; font-weight: 800; letter-spacing: 0; fill: var(--ink); }
+    .subtitle { font-size: 18px; fill: var(--muted); }
+    .label { font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; fill: var(--muted); }
+    .h { font-size: 21px; font-weight: 800; fill: var(--ink); }
+    .p { font-size: 14px; fill: var(--muted); }
+    .small { font-size: 12px; fill: var(--muted); }
+    .num { font-size: 24px; font-weight: 900; fill: var(--accent); }
+    .frame { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; filter: drop-shadow(0 18px 36px var(--shadow)); }
+    .panel { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+    .soft { fill: var(--soft); stroke: var(--line); }
+    .soft2 { fill: var(--soft-2); stroke: var(--line); }
+    .accent { fill: var(--accent); }
+    .accent-text { fill: var(--accent-ink); font-weight: 800; }
+    .chip { fill: var(--surface); stroke: var(--line); stroke-width: 1.1; }
+    .chip-on { fill: var(--accent); stroke: var(--accent); }
+    .chip-lime { fill: var(--soft-2); stroke: var(--line); }
+    .connector { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; marker-end: url(#arrow); }
+    .muteline { stroke: var(--line); stroke-width: 1.2; }
+    .phone { fill: var(--surface); stroke: var(--line); stroke-width: 2; filter: drop-shadow(0 18px 32px var(--shadow)); }
+    .screen { fill: color-mix(in srgb, Canvas 96%, Highlight 4%); }
+    .field { fill: var(--surface); stroke: var(--line); }
+    .owned { fill: color-mix(in srgb, Mark 38%, Canvas); stroke: var(--line); }
+    .notowned { fill: color-mix(in srgb, CanvasText 6%, Canvas); stroke: var(--line); }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" class="accent"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1440" height="980" fill="var(--ground)"/>
+
+  <text x="72" y="78" class="title">Goal-first onboarding</text>
+  <text x="72" y="112" class="subtitle">Start with the user's goal, then derive person, taste, meal fit, stock, quantity, and wake handoff.</text>
+
+  <g transform="translate(72 158)">
+    <rect class="frame" x="0" y="0" width="1296" height="264" rx="28"/>
+    <text class="label" x="32" y="42">New order</text>
+
+    <g transform="translate(32 70)">
+      <rect class="soft2" x="0" y="0" width="154" height="136" rx="20"/>
+      <text class="num" x="18" y="38">1</text>
+      <text class="h" x="18" y="72">Goal</text>
+      <text class="p" x="18" y="100">Diet and targets</text>
+      <text class="p" x="18" y="121">derive from here</text>
+    </g>
+    <path class="connector" d="M 194 138 H 240"/>
+
+    <g transform="translate(250 70)">
+      <rect class="panel" x="0" y="0" width="154" height="136" rx="20"/>
+      <text class="num" x="18" y="38">2</text>
+      <text class="h" x="18" y="72">Person</text>
+      <text class="p" x="18" y="100">Name, targets,</text>
+      <text class="p" x="18" y="121">sleep, prep time</text>
+    </g>
+    <path class="connector" d="M 412 138 H 458"/>
+
+    <g transform="translate(468 70)">
+      <rect class="panel" x="0" y="0" width="154" height="136" rx="20"/>
+      <text class="num" x="18" y="38">3</text>
+      <text class="h" x="18" y="72">Tastes</text>
+      <text class="p" x="18" y="100">Ask once, then</text>
+      <text class="p" x="18" y="121">learn over time</text>
+    </g>
+    <path class="connector" d="M 630 138 H 676"/>
+
+    <g transform="translate(686 70)">
+      <rect class="panel" x="0" y="0" width="154" height="136" rx="20"/>
+      <text class="num" x="18" y="38">4</text>
+      <text class="h" x="18" y="72">Plan fit</text>
+      <text class="p" x="18" y="100">Do these meals</text>
+      <text class="p" x="18" y="121">work for you?</text>
+    </g>
+    <path class="connector" d="M 848 138 H 894"/>
+
+    <g transform="translate(904 70)">
+      <rect class="panel" x="0" y="0" width="154" height="136" rx="20"/>
+      <text class="num" x="18" y="38">5</text>
+      <text class="h" x="18" y="72">Stock</text>
+      <text class="p" x="18" y="100">Have, do not</text>
+      <text class="p" x="18" y="121">have, or later</text>
+    </g>
+    <path class="connector" d="M 1066 138 H 1112"/>
+
+    <g transform="translate(1122 70)">
+      <rect class="soft2" x="0" y="0" width="142" height="136" rx="20"/>
+      <text class="num" x="18" y="38">6</text>
+      <text class="h" x="18" y="72">Quantity</text>
+      <text class="p" x="18" y="100">Typing amount</text>
+      <text class="p" x="18" y="121">means owned</text>
+    </g>
+  </g>
+
+  <g transform="translate(94 478)">
+    <rect class="phone" x="0" y="0" width="330" height="422" rx="38"/>
+    <rect class="screen" x="18" y="20" width="294" height="382" rx="24"/>
+    <text class="label" x="42" y="62">Step 1</text>
+    <text class="h" x="42" y="96">What are you</text>
+    <text class="h" x="42" y="123">working toward?</text>
+    <text class="p" x="42" y="154">Everything later derives</text>
+    <text class="p" x="42" y="175">from this choice.</text>
+    <rect class="chip-on" x="42" y="212" width="246" height="46" rx="23"/>
+    <text class="accent-text" x="66" y="241">Fat loss</text>
+    <rect class="chip" x="42" y="270" width="246" height="46" rx="23"/>
+    <text class="p" x="66" y="299">Lean muscle</text>
+    <rect class="chip" x="42" y="328" width="246" height="46" rx="23"/>
+    <text class="p" x="66" y="357">Maintain</text>
+  </g>
+
+  <g transform="translate(464 478)">
+    <rect class="phone" x="0" y="0" width="330" height="422" rx="38"/>
+    <rect class="screen" x="18" y="20" width="294" height="382" rx="24"/>
+    <text class="label" x="42" y="62">Step 4</text>
+    <text class="h" x="42" y="96">Do these work</text>
+    <text class="h" x="42" y="123">for you?</text>
+    <rect class="panel" x="42" y="154" width="246" height="88" rx="18"/>
+    <text class="h" x="60" y="184" style="font-size:15px">Protein oats and eggs</text>
+    <text class="small" x="60" y="208">520 kcal - 44 g protein</text>
+    <rect class="chip-lime" x="60" y="220" width="62" height="24" rx="12"/>
+    <text class="small" x="76" y="237">Works</text>
+    <rect class="panel" x="42" y="258" width="246" height="88" rx="18"/>
+    <text class="h" x="60" y="288" style="font-size:15px">Chicken rice bowl</text>
+    <text class="small" x="60" y="312">Swap if needed, never silent</text>
+    <rect class="chip" x="60" y="324" width="58" height="24" rx="12"/>
+    <text class="small" x="76" y="341">Swap</text>
+  </g>
+
+  <g transform="translate(834 478)">
+    <rect class="phone" x="0" y="0" width="330" height="422" rx="38"/>
+    <rect class="screen" x="18" y="20" width="294" height="382" rx="24"/>
+    <text class="label" x="42" y="62">Step 6</text>
+    <text class="h" x="42" y="96">What do you</text>
+    <text class="h" x="42" y="123">have?</text>
+    <rect class="owned" x="42" y="154" width="246" height="152" rx="20"/>
+    <text class="h" x="60" y="184" style="font-size:16px">Rolled oats</text>
+    <text class="small" x="60" y="207">Have selected - owned now</text>
+    <rect class="chip-on" x="60" y="224" width="68" height="32" rx="16"/>
+    <text class="accent-text" x="79" y="245" style="font-size:12px">Have</text>
+    <rect class="field" x="60" y="266" width="96" height="34" rx="10"/>
+    <text class="p" x="78" y="289">1</text>
+    <rect class="field" x="164" y="266" width="66" height="34" rx="10"/>
+    <text class="p" x="184" y="289">kg</text>
+    <rect class="notowned" x="42" y="322" width="246" height="44" rx="18"/>
+    <text class="p" x="60" y="350">Eggs - do not have</text>
+  </g>
+
+  <g transform="translate(1178 512)">
+    <rect class="frame" x="0" y="0" width="190" height="320" rx="26"/>
+    <text class="label" x="24" y="38">Handoff</text>
+    <circle cx="95" cy="105" r="42" class="soft2"/>
+    <circle cx="82" cy="94" r="6" fill="var(--ink)"/>
+    <circle cx="108" cy="94" r="6" fill="var(--ink)"/>
+    <path d="M 76 116 Q 95 132 114 116" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>
+    <text class="h" x="24" y="178">You are set.</text>
+    <text class="p" x="24" y="210">Tap I'm awake</text>
+    <text class="p" x="24" y="231">when the real day</text>
+    <text class="p" x="24" y="252">starts.</text>
+    <rect class="chip-on" x="24" y="276" width="142" height="38" rx="19"/>
+    <text class="accent-text" x="50" y="300">I'm awake</text>
+  </g>
+
+  <g transform="translate(72 920)">
+    <text class="label" x="0" y="0">Implementation rule</text>
+    <text class="subtitle" x="0" y="32">A positive quantity or the Have choice writes inventory immediately. No separate I have this button.</text>
+  </g>
+</svg>
