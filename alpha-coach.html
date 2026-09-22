@@ -94,7 +94,7 @@ html[data-theme="ember"]{
 }
 @media (prefers-reduced-motion: reduce){
   html:focus-within,*,*::before,*::after{scroll-behavior:auto!important}
-  .screen,.stagger > *,.gate,.ob-wrap,.hero[data-hero],.msg-line,.wb-col,.meal.unlocking,.meal.celebrate,.confirm,.confirm svg,.reward-burst,.reward-spark,.skel,.scrim,.modal,.toast,.toast.out{animation:none!important}
+  .screen,.stagger > *,.gate,.ob-wrap,.hero[data-hero],.wake-derive-card,.wake-derive-row,.msg-line,.wb-col,.meal.unlocking,.meal.celebrate,.confirm,.confirm svg,.reward-burst,.reward-spark,.skel,.scrim,.modal,.toast,.toast.out{animation:none!important}
   .meal[data-state="due"] .meal-dot{animation:none!important;box-shadow:0 0 0 3px var(--accent-soft)}
   .skip-link,.nav-item,.nav-item svg,.btn,.iconbtn,.chip,.input,.modal-x,.chat-fab,.hero,.points-strip,.pressable,.chk,.chk svg,.estdrop,.more-card,.tab,.choice-group summary::after{transition-property:background,border-color,color,opacity,box-shadow,fill,stroke!important;transition-duration:120ms!important}
   .track > i,.geo-rail > i,.hero-rail > i{transition:none!important}
@@ -627,6 +627,18 @@ textarea.input{height:auto;padding:11px 13px;resize:vertical}
 .hero-title{font-size:26px;font-weight:800;letter-spacing:-.05em}
 .hero-badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
 .hero-cta{border-radius:99px}
+.wake-derive-card{margin-top:13px;border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:var(--r-md);padding:11px;animation:wakeCardIn var(--d-3) var(--ease-out) both}
+.wake-derive-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.wake-derive-title{font-size:12.5px;font-weight:800;color:var(--accent-ink);letter-spacing:-.015em}
+.wake-derive-note{font-size:11.5px;color:var(--muted);font-weight:650}
+.wake-derive-list{display:grid;gap:6px}
+.wake-derive-row{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:8px;padding:7px 8px;border-radius:12px;background:var(--surface);border:1px solid var(--line);animation:wakeRowIn var(--d-3) var(--ease-out) both;animation-delay:calc(var(--i) * 45ms)}
+.wake-derive-row:first-child{border-color:var(--accent-line);box-shadow:0 0 0 2px var(--accent-soft)}
+.wake-derive-time{font-family:var(--f-display);font-size:15px;font-weight:850;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.wake-derive-meal{min-width:0;font-size:12.5px;font-weight:750;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wake-derive-slot{font-size:11px;color:var(--muted);font-weight:650}
+@keyframes wakeCardIn{from{opacity:0;transform:translate3d(0,8px,0)}to{opacity:1;transform:none}}
+@keyframes wakeRowIn{from{opacity:0;transform:translate3d(0,8px,0)}to{opacity:1;transform:none}}
 
 /* section heading like the refs */
 .bighead{font-family:var(--f-display);font-weight:800;font-size:30px;letter-spacing:-.05em;line-height:1.02}
@@ -3063,6 +3075,24 @@ function mascotReactionFor(st,plan=sched()){
   if(st==='prewake') return 'rest';
   return 'idle';
 }
+function WakeDeriveSequence(d,rows){
+  const preview=rows.slice(0,3);
+  const nx=rows.find(r=>r.status==='pending')||preview[0];
+  if(!d||!preview.length||!nx) return '';
+  return `<div class="wake-derive-card" role="status" aria-live="polite" aria-label="Wake ${fmtTime(d.wake)} set. Meal rows re-derived from that wake time. Next action is ${esc(nx.meal.slot)} at ${fmtTime(nx.at)}.">
+    <div class="wake-derive-head">
+      <span class="wake-derive-title">${ic('sun',13,2,'var(--accent)')} Wake ${fmtTime(d.wake)} set</span>
+      <span class="wake-derive-note">Rows re-derived</span>
+    </div>
+    <div class="wake-derive-list">
+      ${preview.map((r,i)=>`<div class="wake-derive-row" style="--i:${i}">
+        <span class="wake-derive-time">${fmtTime(r.at)}</span>
+        <span class="wake-derive-meal">${esc(r.meal.name)}</span>
+        <span class="wake-derive-slot">${i===0?'Next':esc(r.meal.slot)}</span>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
 function HeroCard(){
   const d=D(), nx=nextRow(), st=homeState(), plan=sched();
   const meal=nx?nx.meal:null;
@@ -3084,6 +3114,7 @@ function HeroCard(){
     <span class="pillbadge mint">${ic('sun',13,2,'var(--ink)')} Wake ${fmtTime(d.wake)}</span>
     <span class="pillbadge peach">${ic('refresh',13,2,'var(--ink)')} Plan rebuilt from that time</span>
   </div>`:'';
+  const wakeSequence=(wakeBeat&&wakeBeat.reaction==='wake'&&nx)?WakeDeriveSequence(d,activeRows()):'';
   const pctToNext=(()=>{
     if(!nx) return 100;
     const rows=activeRows(), i=rows.indexOf(nx);
@@ -3108,6 +3139,7 @@ function HeroCard(){
           <span class="pillbadge peach">${ic('clock',13,2,'var(--ink)')} ${meal.prepMin} min</span>
         </div>
         ${wakeLine}
+        ${wakeSequence}
         ${meal.replacedFrom?`<button class="hero-note" data-act="modal" data-v="swapinfo" data-arg="${meal.id}">
           ${ic('swap',13)} Replaced ${esc(meal.replacedFrom.toLowerCase())} — see why</button>`:''}
       </div>

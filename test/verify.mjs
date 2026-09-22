@@ -141,6 +141,14 @@ ok('wake moment shows the rebuilt anchor and wake mascot state',
   /Wake \d/.test(txt()) &&
   /Plan rebuilt from that time/.test(txt()) &&
   /wake state/.test(doc.querySelector('.hero .mascot')?.getAttribute('aria-label') || ''));
+ok('wake moment visibly redraws derived meal rows from the wake anchor', (() => {
+  const rows = A().sched().rows.slice(0, 3);
+  const redrawRows = [...doc.querySelectorAll('.wake-derive-row')];
+  return redrawRows.length === 3 &&
+    rows.every(r => txt().includes(displayTime(r.at))) &&
+    /Rows re-derived/.test(txt()) &&
+    /Next/.test(redrawRows[0].textContent || '');
+})());
 /* Pin the session to a 07:00 start so the suite is deterministic. The eating
    window closes a fixed time before the user's usual bedtime, so results would
    otherwise depend on the hour the tests happen to run. */
@@ -814,6 +822,8 @@ ok('reduced motion keeps static mascot milestone expressions',
   /\.m-wake \.m-body\{transform:translate3d\(0,-9px,0\) scale\(1\.015\)\}/.test(html) &&
   /\.m-cheer \.m-body\{transform:translate3d\(0,-10px,0\) scale\(1\.02\)\}/.test(html) &&
   /\.m-concern \.m-body\{transform:rotate\(-1\.5deg\) translate3d\(-2px,0,0\)\}/.test(html));
+ok('reduced motion removes wake redraw travel while keeping the facts visible',
+  /prefers-reduced-motion: reduce[\s\S]*\.wake-derive-card,\.wake-derive-row[\s\S]*animation:none!important/.test(html));
 ok('toast region announces updates politely',
   !!doc.querySelector('#toasts[role="status"][aria-live="polite"]'));
 click(act('go', 'today')); await wait(80);
