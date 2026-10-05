@@ -1405,6 +1405,7 @@ function tx(ref,type,delta,note,meta={}){
     S.inv.mismatch=S.inv.mismatch.filter(m=>m.ref!==ref);
     S.inv.mismatch.push({ref,at:now(),short,note:`${it.name} went below zero. ${fmtQty(it.base,short)} more was used than recorded.`});
   }
+  if(['purchase','correct','add'].includes(type)&&delta!==0&&it.qty>0) rememberStocked(ref,it.qty,type);
   return rec;
 }
 function setQty(ref,baseQty,note){          // correction, not restock
@@ -1724,11 +1725,12 @@ function defaultState(){
     suppPlan:DEFAULT_SUPP_PLAN.map(s=>({...s,id:uid(),source:'user'})),
     inv:{items:{},last:null,mismatch:[],enabled:false},
     points:blankPoints(), dislikedMeals:[], weights:[], sleepLog:[], notify:false, theme:'grove',
+    learning:{eaten:[],stocked:[]},
     shop:{}, swaps:{}, jugaad:null,
     workout:null, chat:[],
     ui:{screen:'today', modal:null, modalArg:null, celebrate:null, online:true, invTab:'need', shopTab:'urgent',
         eatTimeSeen:false, eatTimeFull:false, foodLookup:{mode:'manual',key:'',portion:1,result:null},
-        photoLog:defaultPhotoLog(), estFoodResult:null, mascotBeat:null, feedback:{}}
+        photoLog:defaultPhotoLog(), estFoodResult:null, mascotBeat:null, feedback:{}, onboardFit:{}, onboardStock:{}}
   };
 }
 let S=Store.loadSnapshot(Store.key)||defaultState();
@@ -1769,10 +1771,15 @@ const STATE_VERSION=3;
   if(!Array.isArray(S.dislikedMeals)) S.dislikedMeals=[];
   if(!Array.isArray(S.weights)) S.weights=[];
   if(!Array.isArray(S.sleepLog)) S.sleepLog=[];
+  S.learning=Object.assign({eaten:[],stocked:[]},S.learning||{});
+  if(!Array.isArray(S.learning.eaten)) S.learning.eaten=[];
+  if(!Array.isArray(S.learning.stocked)) S.learning.stocked=[];
   S.obStep=Number.isInteger(S.obStep)?S.obStep:0;
   S.onboarded=!!S.onboarded;
   S.ui=Object.assign(d.ui,S.ui||{},{modal:null,modalArg:null,celebrate:null});
   if(!S.ui.feedback||typeof S.ui.feedback!=='object') S.ui.feedback={};
+  if(!S.ui.onboardFit||typeof S.ui.onboardFit!=='object') S.ui.onboardFit={};
+  if(!S.ui.onboardStock||typeof S.ui.onboardStock!=='object') S.ui.onboardStock={};
   S.ui.photoLog=Object.assign(defaultPhotoLog(),S.ui.photoLog||{});
   if(!Array.isArray(S.ui.photoLog.top)) S.ui.photoLog.top=[];
   if(typeof S.ui.photoLog.portion!=='number'||S.ui.photoLog.portion<=0) S.ui.photoLog.portion=1;
@@ -1787,6 +1794,27 @@ function D(){
   // a session older than 20 hours is stale — never carry overdue meals forward
   if(now()-d.wake>20*3600e3){ archive(d); S.activeDay=null; save(); return null; }
   return d;
+}
+function learningBag(){
+  S.learning=Object.assign({eaten:[],stocked:[]},S.learning||{});
+  if(!Array.isArray(S.learning.eaten)) S.learning.eaten=[];
+  if(!Array.isArray(S.learning.stocked)) S.learning.stocked=[];
+  return S.learning;
+}
+function trimLearn(arr){ while(arr.length>200) arr.shift(); return arr; }
+function rememberEaten(meal, consumed=[], ateAt=now()){
+  const b=learningBag();
+  b.eaten.push({
+    at:ateAt, mealId:meal.id, meal:meal.name,
+    refs:(meal.ing||[]).map(i=>i.ref),
+    consumed:(consumed||[]).map(i=>({ref:i.ref,amt:i.amt}))
+  });
+  trimLearn(b.eaten);
+}
+function rememberStocked(ref,qty,source){
+  const b=learningBag(), c=CATALOG[ref]||{name:ref,base:'g'};
+  b.stocked.push({at:now(),ref,name:c.name,qty,base:c.base,source});
+  trimLearn(b.stocked);
 }
 function archive(d){
   d.closed=true;
@@ -2266,6 +2294,7 @@ function commitMeal({mealId, ateAt, loggedAt, use, timeConfirmed}){
   d.logs[mealId]={status:'done',ateAt,loggedAt,at:ateAt,planned:row.planned||row.at,
                   deducted:consumed.length>0,consumed,cls,
                   macros:macrosFor(row.meal,consumed)};
+  rememberEaten(row.meal,consumed,ateAt);
   consumed.forEach(u=>tx(u.ref,'meal',-u.amt,row.meal.name,{mealId}));
   if(consumed.length) d.lastConsumption={mealId,at:now(),items:consumed.map(c=>({...c,name:catName(c.ref),base:(CATALOG[c.ref]||{base:'g'}).base}))};
   closeOutDay(d);
@@ -3772,106 +3801,142 @@ function ScreenStack(){
 /* ===========================================================================
    ONBOARDING — profile, then the pantry intake pass
    =========================================================================== */
-const OB_STEPS=8;
+const OB_STEPS=7;
+const OB_GOALS=[
+  ['cut','Fat loss','I will keep meals higher-protein and tighter on calories.'],
+  ['lean','Lean muscle','I will keep protein high and leave more room for training fuel.'],
+  ['maintain','Maintain','I will keep meals steady and watch consistency.']
+];
+function goalLabel(v){ return (OB_GOALS.find(g=>g[0]===v)||OB_GOALS[0])[1]; }
+function goalSummary(){ return `${goalLabel(S.prefs.goal)} selected. ${(OB_GOALS.find(g=>g[0]===S.prefs.goal)||OB_GOALS[0])[2]}`; }
+function obStockState(ref){
+  const bag=S.ui.onboardStock||{};
+  if(bag[ref]) return bag[ref];
+  return invQty(ref)>0?'have':'unknown';
+}
+function obDefaultQty(ref){
+  const c=CATALOG[ref]||{pack:1,serving:1};
+  return c.pack||c.serving||1;
+}
+function obMealRefs(ref){
+  return MEALS().filter(m=>(m.ing||[]).some(i=>i.ref===ref)).map(m=>m.name);
+}
+function obStockCard(ref){
+  const c=CATALOG[ref]||{name:ref,cat:'misc',base:'g',pack:1,serving:1};
+  const it=inv(ref)||ensurePreview(ref), unit=defaultUnitFor(it), opts=UNIT_OPTS[it.base]||[it.base];
+  const state=obStockState(ref), qty=invQty(ref), meals=obMealRefs(ref).slice(0,2);
+  const active=x=>state===x?'true':'false';
+  return `<article class="card pad-s stock-card" data-stock-state="${esc(state)}">
+    <div class="spread" style="gap:10px;align-items:flex-start">
+      <div style="min-width:0"><div class="meal-name" style="font-size:15px">${esc(c.name)}</div>
+        <div class="meta" style="margin-top:2px;text-transform:capitalize">${esc(c.cat||'food')}${meals.length?` &middot; needed in ${esc(meals.join(' and '))}`:''}</div></div>
+      <span class="tag ${qty>0?'ok':state==='none'?'warn':'mute'}">${qty>0?`Owned ${fmtQty(it.base,qty)}`:state==='none'?'Not in stock':state==='later'?'Later':'Unknown'}</span>
+    </div>
+    <div class="row stock-choice" role="group" aria-label="${esc(c.name)} stock" style="gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="chip" data-act="obStock" data-v="${esc(ref)}:have" aria-pressed="${active('have')}">Have</button>
+      <button class="chip" data-act="obStock" data-v="${esc(ref)}:none" aria-pressed="${active('none')}">Do not have</button>
+      <button class="chip" data-act="obStock" data-v="${esc(ref)}:later" aria-pressed="${active('later')}">Later</button>
+    </div>
+    <div class="grid g2" style="gap:0 10px;margin-top:12px">
+      <label class="field"><span>Quantity</span><input class="input" type="number" step="any" inputmode="decimal" data-keep="obStock-${esc(ref)}" data-ob-stock-qty="${esc(ref)}" value="${qty>0?tidy(fromBase(qty,unit,it)):''}" placeholder="${tidy(fromBase(obDefaultQty(ref),unit,it))}"></label>
+      <label class="field"><span>Unit</span><select class="input" data-ob-stock-unit="${esc(ref)}">${opts.map(u=>`<option value="${u}" ${u===unit?'selected':''}>${UNITS[u].label}</option>`).join('')}</select></label>
+    </div>
+    ${fieldFeedback('obStock_'+ref)}
+  </article>`;
+}
+function obMealCard(m){
+  const state=(S.ui.onboardFit||{})[m.id]||'unset';
+  const ing=(m.ing||[]).slice(0,4).map(i=>catName(i.ref)).join(', ');
+  return `<article class="card pad-s">
+    <div class="spread" style="gap:10px;align-items:flex-start">
+      <div style="min-width:0"><div class="meal-name">${esc(m.name)}</div>
+        <div class="meta" style="margin-top:2px">${esc(m.slot)} &middot; ${m.kcal} kcal &middot; ${m.p} g protein &middot; ${m.prepMin} min</div>
+        <div class="meta" style="margin-top:5px">${esc(ing)}</div></div>
+      <span class="tag ${state==='works'?'ok':state==='never'?'warn':'mute'}">${state==='works'?'Works':state==='never'?'Avoiding':'Review'}</span>
+    </div>
+    <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="chip" data-act="obFit" data-v="${m.id}:works" aria-pressed="${state==='works'}">Works</button>
+      <button class="chip" data-act="modal" data-v="swap" data-arg="${m.id}">${ic('swap',13)} Swap</button>
+      <button class="chip" data-act="obFit" data-v="${m.id}:never" aria-pressed="${state==='never'}">Never this</button>
+    </div>
+  </article>`;
+}
 function Onboarding(){
   const st=S.obStep, p=S.prefs;
   const foodRefs=Object.keys(CATALOG).filter(r=>!isSupp(r));
   const foodChoices=foodRefs.map(r=>[r,catName(r)]);
+  const hardCount=(p.allergies||[]).length+(p.refuse||[]).length;
+  const tasteCount=(p.like||[]).length+(p.dislike||[]).length+(p.cuisines||[]).length;
   const step={
     0:()=>`<div style="text-align:center">
-      ${Mascot({w:180,reaction:'idle',arcs:1})}
-      <h2 style="font-size:29px;margin-top:16px">Let's set up your kitchen.</h2>
+      ${Mascot({w:170,reaction:'idle',arcs:1})}
+      <h2 style="font-size:29px;margin-top:16px">What are you working toward?</h2>
       <p class="talk" style="margin-top:10px;color:var(--muted);font-size:15px">
-        A few questions about your goal, your food and your equipment. Then I will list everything your plan needs and you tell me what you already have.</p>
-      <label class="field" style="margin-top:22px;text-align:left"><span>Your name</span>
-        <input class="input" data-keep="obName" data-ob="name" value="${esc(S.name)}" placeholder="Name"></label></div>`,
-    1:()=>`<h2 style="font-size:27px">What are you working towards?</h2>
-      <p class="talk" style="margin:9px 0 20px;color:var(--muted)">This sets your daily targets.</p>
-      ${ChipList([['cut','Fat loss'],['lean','Lean muscle'],['maintain','Maintain']],'setgoal',[p.goal])}
-      <div class="grid g2" style="gap:0 12px;margin-top:20px">
+        Start with the goal. Diet, targets, meal suggestions, and stock questions come after this.</p>
+      <div class="stack s" style="margin-top:20px;text-align:left">
+        ${OB_GOALS.map(([v,l,h])=>`<button class="card pad-s" style="width:100%;text-align:left" data-act="setgoal" data-v="${v}" aria-pressed="${p.goal===v}">
+          <div class="spread" style="gap:10px"><div><div class="meal-name">${l}</div><p class="talk" style="font-size:13.5px;color:var(--muted);margin-top:4px">${h}</p></div>${p.goal===v?`<span class="tag ok">Selected</span>`:''}</div>
+        </button>`).join('')}
+      </div>
+      <p class="talk" style="margin-top:14px;color:var(--accent-ink);font-size:13.5px">${esc(goalSummary())}</p></div>`,
+    1:()=>`<h2 style="font-size:27px">Who is this plan for?</h2>
+      <p class="talk" style="margin:9px 0 18px;color:var(--muted)">These numbers shape the plan. The real day still starts when you tap <b>I'm awake</b>.</p>
+      <div class="banner" style="margin-bottom:16px">${ic('target',17,1.7,'var(--accent)')}<p>Goal: <b>${esc(goalLabel(p.goal))}</b>. Empty targets use the defaults shown here.</p></div>
+      <label class="field"><span>Your name</span><input class="input" data-keep="obName" data-ob="name" value="${esc(S.name)}" placeholder="Athlete"></label>
+      <div class="grid g2" style="gap:0 12px">
         <label class="field"><span>Calories</span><input class="input" type="number" data-ob="kcal" value="${p.kcal}"></label>
         <label class="field"><span>Protein (g)</span><input class="input" type="number" data-ob="protein" value="${p.protein}"></label>
         <label class="field"><span>Carbs (g)</span><input class="input" type="number" data-ob="carbs" value="${p.carbs}"></label>
         <label class="field"><span>Fat (g)</span><input class="input" type="number" data-ob="fat" value="${p.fat}"></label>
-      </div>`,
-    2:()=>`<h2 style="font-size:27px">Anything you must avoid?</h2>
-      <p class="talk" style="margin:9px 0 18px;color:var(--muted)">Restrictions and allergies are hard rules — they are never suggested, in any mode.</p>
-      <div class="label" style="margin-bottom:8px">Diet</div>${ChipList(DIETS,'setdiet',[p.diet])}
-      <div class="label" style="margin:18px 0 8px">Allergies</div>${ChipList(foodRefs.map(r=>[r,catName(r)]),'togAllergy',p.allergies)}`,
-    3:()=>`<h2 style="font-size:27px">Food you like and food you won't touch.</h2>
-      <p class="talk" style="margin:9px 0 18px;color:var(--muted)">Dislikes are avoided where possible. Refusals are never used.</p>
-      ${ChoiceGroup('Like','Use these more often when they fit the plan.',ChipList(foodChoices,'togLike',p.like),p.like,true)}
-      ${ChoiceGroup('Dislike','Avoid where possible, but do not treat as unsafe.',ChipList(foodChoices,'togDislike',p.dislike),p.dislike,false)}
-      ${ChoiceGroup('Will not eat','Hard refusal. These are never used.',ChipList(foodChoices,'togRefuse',p.refuse),p.refuse,false)}`,
-    4:()=>`<h2 style="font-size:27px">How do you cook?</h2>
-      <p class="talk" style="margin:9px 0 18px;color:var(--muted)">Meals are matched to your equipment and the time you actually have.</p>
-      <div class="label" style="margin-bottom:8px">Cuisines you want to see</div>${ChipList(CUISINES,'togCuisine',p.cuisines)}
-      <div class="label" style="margin:16px 0 8px">Cooking ability</div>${ChipList(COOKING,'setcooking',[p.cooking])}
-      <div class="label" style="margin:16px 0 8px">Equipment</div>${ChipList(EQUIP,'togEquip',p.equipment)}
-      <div class="grid g2" style="gap:0 12px;margin-top:18px">
-        <label class="field"><span>Max prep time (min)</span><input class="input" type="number" data-ob="prepTime" value="${p.prepTime}"></label>
-        <label class="field"><span>Budget</span><select class="input" data-ob="budget">${BUDGETS.map(([v,l])=>`<option value="${v}" ${p.budget===v?'selected':''}>${l}</option>`).join('')}</select></label>
-      </div>`,
-    5:()=>`<h2 style="font-size:27px">Sleep and supplements.</h2>
-      <p class="talk" style="margin:9px 0 18px;color:var(--muted)">Your usual pattern only sets expectations — the real day still starts when you tap “I'm awake”.</p>
-      <div class="grid g2" style="gap:0 12px">
-        <label class="field"><span>Typical wake time</span><input class="input" type="time" data-ob="wake" value="${p.wake}"></label>
         <label class="field"><span>Typical sleep time</span><input class="input" type="time" data-ob="sleep" value="${p.sleep}"></label>
-      </div>
-      <div class="label" style="margin:8px 0 8px">Supplements you already take</div>
-      ${ChipList(Object.keys(CATALOG).filter(isSupp).map(r=>[r,catName(r)]),'togSupp',(S.suppPlan||[]).map(s=>s.ref))}
-      <p class="talk" style="margin-top:12px;font-size:13px;color:var(--muted)">Anything you add here is recorded as yours. Nothing prescribed to you is changed or recommended against.</p>`,
-    6:()=>{
+        <label class="field"><span>Max prep time (min)</span><input class="input" type="number" data-ob="prepTime" value="${p.prepTime}"></label>
+      </div>`,
+    2:()=>`<h2 style="font-size:27px">Hard rules.</h2>
+      <p class="talk" style="margin:9px 0 18px;color:var(--muted)">These are never included in meals or replacements.</p>
+      <div class="label" style="margin-bottom:8px">Diet</div>${ChipList(DIETS,'setdiet',[p.diet])}
+      ${ChoiceGroup('Allergies','Never included in any meal or replacement.',ChipList(foodChoices,'togAllergy',p.allergies),p.allergies,false)}
+      ${ChoiceGroup('Will not eat','Hard refusal. These are never used.',ChipList(foodChoices,'togRefuse',p.refuse),p.refuse,false)}
+      <p class="talk" style="margin-top:12px;font-size:13.5px;color:var(--muted)">${hardCount?`${hardCount} hard rule${hardCount===1?'':'s'} saved.`:'No hard rules yet. You can add them later in Preferences.'}</p>`,
+    3:()=>`<h2 style="font-size:27px">What should the food feel like?</h2>
+      <p class="talk" style="margin:9px 0 18px;color:var(--muted)">Choose what matters. I will not keep asking for more after this.</p>
+      ${ChoiceGroup('Foods I like','Use these more often when they fit the plan.',ChipList(foodChoices,'togLike',p.like),p.like,true)}
+      ${ChoiceGroup('Foods I dislike','Avoid when a good alternative exists.',ChipList(foodChoices,'togDislike',p.dislike),p.dislike,false)}
+      ${ChoiceGroup('Cuisines I want to see','A preference, not a hard rule.',ChipList(CUISINES,'togCuisine',p.cuisines),p.cuisines,false)}
+      ${ChoiceGroup('Cooking setup','Ability and equipment shape prep time.',`${ChipList(COOKING,'setcooking',[p.cooking])}<div style="height:10px"></div>${ChipList(EQUIP,'togEquip',p.equipment)}`,[p.cooking,...(p.equipment||[])],false)}
+      <p class="talk" style="margin-top:12px;font-size:13.5px;color:var(--muted)">${tasteCount?`${tasteCount} taste signal${tasteCount===1?'':'s'} saved.`:'No taste picks yet. I will learn from what you eat and what you skip.'}</p>`,
+    4:()=>`<h2 style="font-size:27px">Do these work for you?</h2>
+      <p class="talk" style="margin:9px 0 18px;color:var(--muted)">This is the first pass from your goal and tastes. Keep what works. Change what does not.</p>
+      <div class="stack s">${MEALS().map(obMealCard).join('')||`<div class="banner">${ic('alert',17,1.7,'var(--warn)')}<p>I cannot build a safe match from those rules yet. Go back to tastes or continue with defaults and edit later.</p></div>`}</div>`,
+    5:()=>{
       const refs=planRefs();
-      if(!invOn()) return `<h2 style="font-size:27px">Shall I track your kitchen?</h2>
-        <p class="talk" style="margin:9px 0 20px;color:var(--muted)">
-          Entirely optional. With it on I count what you have, warn you before anything runs out, build your shopping list, and swap meals you cannot actually make. It only works if you keep it roughly current.</p>
+      if(!invOn()) return `<h2 style="font-size:27px">Track your kitchen?</h2>
+        <p class="talk" style="margin:9px 0 20px;color:var(--muted)">Kitchen tracking is optional. Meals, schedule, points, and coaching work without it.</p>
         <div class="pickgrid" style="display:grid;gap:11px">
-          <button class="card" style="text-align:left" data-act="invToggle">
-            <div style="font-family:var(--f-display);font-weight:700;font-size:16px;letter-spacing:-.03em">Yes, track my kitchen</div>
-            <p class="talk" style="font-size:13.5px;color:var(--muted);margin-top:6px">I will ask what you have next. Takes a couple of minutes.</p></button>
-          <button class="card" style="text-align:left" data-act="ob" data-v="next">
-            <div style="font-family:var(--f-display);font-weight:700;font-size:16px;letter-spacing:-.03em">Skip for now</div>
-            <p class="talk" style="font-size:13.5px;color:var(--muted);margin-top:6px">Meals, schedule, coaching and points all work without it. You can turn it on any time.</p></button>
+          <button class="card pad-s" style="text-align:left" data-act="invToggle">
+            <div class="meal-name">Track my kitchen</div>
+            <p class="talk" style="font-size:13.5px;color:var(--muted);margin-top:6px">I will ask what you have from this plan, then build a shopping list.</p></button>
+          <button class="card pad-s" style="text-align:left" data-act="ob" data-v="next">
+            <div class="meal-name">Skip stock for now</div>
+            <p class="talk" style="font-size:13.5px;color:var(--muted);margin-top:6px">No shortages, no shopping pressure. You can turn it on later.</p></button>
         </div>`;
-      return `<h2 style="font-size:27px">What do you already have?</h2>
-      <p class="talk" style="margin:9px 0 6px;color:var(--muted)">
-        These are everything your plan needs. Core ingredients repeat across days on purpose, so this list stays short.</p>
-      <p class="talk" style="margin:0 0 18px;color:var(--muted);font-size:13.5px">
-        Enter anything you already have — skip the rest, they go on the shopping list.</p>
-      <div class="stack s">
-      ${refs.map(ref=>{
-        const c=CATALOG[ref], it=inv(ref), opts=UNIT_OPTS[c.base]||['g'];
-        return `<div class="card pad-s">
-          <div class="spread" style="gap:10px;align-items:flex-start">
-            <div style="min-width:0"><div style="font-weight:600;font-size:14.5px">${esc(c.name)}</div>
-              <div class="meta" style="margin-top:2px;text-transform:capitalize">${esc(c.cat)} · pack ${fmtQty(c.base,c.pack)}${c.scoop?` · scoop ${fmtQty(c.base,c.scoop)}`:''}</div></div>
-            ${it&&it.qty>0?`<span class="tag ok">${fmtQty(c.base,it.qty)}</span>`:''}
-          </div>
-          <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap">
-            <input class="input" style="width:96px;height:38px" type="number" step="any" placeholder="qty" data-pantry="${ref}">
-            <select class="input" style="width:120px;height:38px" data-punit="${ref}">${opts.map(u=>`<option value="${u}">${UNITS[u].label}</option>`).join('')}</select>
-            <button class="btn sm" data-act="pantrySave" data-v="${ref}">I have this</button>
-            ${it&&it.qty>0?`<button class="btn sm ghost" data-act="pantryClear" data-v="${ref}">Clear</button>`:''}
-          </div>
-        </div>`;
-      }).join('')}
-      </div>`;
+      return `<h2 style="font-size:27px">What do you have?</h2>
+        <p class="talk" style="margin:9px 0 18px;color:var(--muted)">These are the items this plan needs. Pick what is already in your kitchen. A positive quantity counts as owned.</p>
+        <div class="stack s">${refs.map(obStockCard).join('')}</div>`;
     },
-    7:()=>{
-      if(!invOn()) return `<div style="text-align:center">${Mascot({w:150,reaction:'cheer',arcs:2})}
+    6:()=>{
+      const owned=invOn()?planRefs().filter(r=>invQty(r)>0).length:0, shorts=shortages();
+      return `<div style="text-align:center">${Mascot({w:150,reaction:'cheer',arcs:2})}
         <h2 style="font-size:27px;margin-top:14px">You are set.</h2>
         <p class="talk" style="margin-top:10px;color:var(--muted);font-size:14.5px">
-          Tap “I'm awake” whenever you get up and I will build the day around it. Kitchen tracking is waiting in Settings if you ever want it.</p></div>`;
-      const shorts=shortages(), have=haveList();
-      return `<div style="text-align:center">${Mascot({w:150,reaction:'cheer',arcs:2})}
-        <h2 style="font-size:27px;margin-top:14px">Your kitchen is set up.</h2></div>
+          ${invOn()?"I saved your goal, tastes, and stock. Tap <b>I'm awake</b> when the day actually starts.":'Meals, schedule, points, and coaching work without kitchen tracking. You can turn it on later.'}</p></div>
         <div class="grid g2" style="gap:12px;margin:20px 0">
-          <div class="card pad-s"><div class="num" style="font-size:24px">${have.length}</div><div class="meta" style="margin-top:4px">Items you have</div></div>
-          <div class="card pad-s"><div class="num" style="font-size:24px;color:var(--accent)">${shorts.length}</div><div class="meta" style="margin-top:4px">To buy</div></div>
-        </div>
-        <p class="talk" style="color:var(--muted);font-size:14.5px">
-          The shopping list is already built. From here, inventory only changes when you confirm a meal, log a supplement, or edit it yourself.</p>`;
+          <div class="card pad-s"><div class="num" style="font-size:24px">${esc(goalLabel(p.goal))}</div><div class="meta" style="margin-top:4px">Goal</div></div>
+          <div class="card pad-s"><div class="num" style="font-size:24px">${p.kcal}</div><div class="meta" style="margin-top:4px">Calories · ${p.protein} g protein</div></div>
+          <div class="card pad-s"><div class="num" style="font-size:24px">${hardCount}</div><div class="meta" style="margin-top:4px">Hard rules</div></div>
+          <div class="card pad-s"><div class="num" style="font-size:24px">${tasteCount}</div><div class="meta" style="margin-top:4px">Taste picks</div></div>
+          <div class="card pad-s"><div class="num" style="font-size:24px">${owned}</div><div class="meta" style="margin-top:4px">Items owned</div></div>
+          <div class="card pad-s"><div class="num" style="font-size:24px;color:var(--accent)">${invOn()?shorts.length:0}</div><div class="meta" style="margin-top:4px">To buy</div></div>
+        </div>`;
     }
   };
   const fn=step[st]||step[0];
@@ -3882,7 +3947,7 @@ function Onboarding(){
     <div class="row" style="gap:10px;margin-top:26px">
       ${st>0?`<button class="btn lg" data-act="ob" data-v="back">Back</button>`:''}
       <button class="btn primary lg" style="flex:1" data-act="ob" data-v="${st===OB_STEPS-1?'done':'next'}">
-        ${st===OB_STEPS-1?'Start using Alpha Coach':st===6?'Continue':'Continue'} ${ic('chev',17)}</button>
+        ${st===0?'Continue with this goal':st===OB_STEPS-1?'Start using Alpha Coach':'Continue'} ${ic('chev',17)}</button>
     </div>
     ${st===0?`<button class="btn ghost block" style="margin-top:8px" data-act="ob" data-v="skip">Skip and use defaults</button>`:''}
   </div></div>`;
@@ -5756,8 +5821,61 @@ const ACT={
     else if(v==='skip'||v==='done'){
       if(!S.name) S.name='Athlete';
       S.onboarded=true; S.ui.screen='today';
-      planRefs().forEach(r=>ensureItem(r));
-      toast(`Welcome in, ${S.name}. ${shortages().length} items are on your shopping list.`);
+      S.ui.onboardFit={}; S.ui.onboardStock={};
+      toast(invOn()?`Welcome in, ${S.name}. ${shortages().length} items are on your shopping list.`:`Welcome in, ${S.name}. Tap I'm awake when your day starts.`);
+    }
+    save(); render();
+  },
+  obFit(v){
+    const [mealId,mode]=String(v||'').split(':');
+    if(!mealId||!mode) return;
+    S.ui.onboardFit=S.ui.onboardFit||{};
+    if(mode==='works'){
+      S.ui.onboardFit[mealId]='works';
+      S.dislikedMeals=(S.dislikedMeals||[]).filter(x=>x!==mealId);
+    }else if(mode==='never'){
+      const meal=mealById(mealId)||PLAN.meals.find(m=>m.id===mealId);
+      const key=(meal&&meal.altId)||mealId;
+      if(!S.dislikedMeals.includes(key)) S.dislikedMeals.push(key);
+      S.ui.onboardFit[mealId]='never';
+    }
+    save(); render();
+  },
+  obStock(v){
+    const [ref,mode]=String(v||'').split(':');
+    if(!ref||!mode) return;
+    S.inv.enabled=true;
+    S.ui.onboardStock=S.ui.onboardStock||{};
+    const it=ensureItem(ref,{source:'user'});
+    if(mode==='have'){
+      if(!invQty(ref)) setQty(ref,obDefaultQty(ref),'Recorded during setup');
+      S.ui.onboardStock[ref]='have';
+      setFeedback('obStock_'+ref,'Registered as owned. You can correct the quantity here.','info');
+    }else if(mode==='none'){
+      setQty(ref,0,'Marked not in stock during setup');
+      S.ui.onboardStock[ref]='none';
+      setFeedback('obStock_'+ref,'Marked not in stock. It can go on the shopping list.','info');
+    }else if(mode==='later'){
+      S.ui.onboardStock[ref]='later';
+      clearFeedback('obStock_'+ref);
+    }
+    save(); render();
+    if(mode==='have') setTimeout(()=>{ const n=document.querySelector(`[data-ob-stock-qty="${ref}"]`); if(n) try{ n.focus(); n.select(); }catch(e){} },0);
+  },
+  obStockQty(ref,n){
+    const f=n||document.querySelector(`[data-ob-stock-qty="${ref}"]`);
+    const u=document.querySelector(`[data-ob-stock-unit="${ref}"]`);
+    const it=ensureItem(ref,{source:'user'});
+    const amt=toBase(f?f.value:0,u?u.value:defaultUnitFor(it),it);
+    S.inv.enabled=true; S.ui.onboardStock=S.ui.onboardStock||{};
+    if(amt>0){
+      setQty(ref,amt,'Recorded during setup');
+      S.ui.onboardStock[ref]='have';
+      setFeedback('obStock_'+ref,'Registered as owned.','info');
+    }else{
+      setQty(ref,0,'Marked not in stock during setup');
+      S.ui.onboardStock[ref]='none';
+      setFeedback('obStock_'+ref,'Quantity is empty. This counts as not in stock.','error');
     }
     save(); render();
   },
@@ -5856,6 +5974,15 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',async e=>{
   const t=e.target;
+  if(t.dataset&&t.dataset.obStockQty){
+    ACT.obStockQty(t.dataset.obStockQty,t);
+    return;
+  }
+  if(t.dataset&&t.dataset.obStockUnit){
+    const f=document.querySelector(`[data-ob-stock-qty="${t.dataset.obStockUnit}"]`);
+    if(f&&f.value) ACT.obStockQty(t.dataset.obStockUnit,f);
+    return;
+  }
   if(t.dataset&&t.dataset.eatTime&&t.value){
     rememberEatTime(t.dataset.eatTime,t.value,'exact');
     renderOverlayOnly();

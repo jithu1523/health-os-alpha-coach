@@ -112,19 +112,63 @@ ok('photo logging uses the confirmed Food-101 ONNX model metadata',
 
 /* ---------------------------------------------------------------- onboarding */
 ok('kitchen tracking is off by default', A().invOn() === false);
-for (let i = 0; i < 3; i++) { click(act('ob', 'next')); await wait(35); }
-ok('onboarding groups large food preference sets',
-  doc.querySelectorAll('.ob-inner .choice-group').length === 3 &&
-  !!doc.querySelector('.ob-inner [data-pref-group="like"][open]') &&
-  !!doc.querySelector('.ob-inner [data-pref-group="will-not-eat"]'));
+ok('onboarding starts with goal before kitchen',
+  /What are you working toward/.test(txt()) && !/kitchen/i.test(doc.querySelector('.ob-inner h2')?.textContent || ''));
+click(act('setgoal', 'lean')); await wait(50);
+ok('onboarding goal choice updates immediately',
+  A().S.prefs.goal === 'lean' && /Lean muscle selected/.test(txt()));
+click(act('ob', 'next')); await wait(35);
+ok('onboarding asks person details before constraints',
+  /Who is this plan for/.test(txt()) && !!doc.querySelector('[data-ob="sleep"]') && !!doc.querySelector('[data-ob="prepTime"]'));
+click(act('ob', 'next')); await wait(35);
+ok('onboarding hard rules are separate from taste preferences',
+  /Hard rules/.test(txt()) && !!doc.querySelector('.ob-inner [data-pref-group="allergies"]') && !!doc.querySelector('.ob-inner [data-pref-group="will-not-eat"]'));
+click(act('ob', 'next')); await wait(35);
+ok('onboarding groups large food preference sets once',
+  doc.querySelectorAll('.ob-inner .choice-group').length >= 4 &&
+  !!doc.querySelector('.ob-inner [data-pref-group="foods-i-like"][open]') &&
+  !!doc.querySelector('.ob-inner [data-pref-group="foods-i-dislike"]'));
 ok('onboarding keeps every food preference choice reachable',
-  ['togLike', 'togDislike', 'togRefuse'].every(a => doc.querySelectorAll(`.ob-inner [data-act="${a}"]`).length > 20));
-for (let i = 0; i < 3; i++) { click(act('ob', 'next')); await wait(35); }
-ok('onboarding asks about the kitchen rather than assuming', /Shall I track your kitchen/.test(txt()));
+  ['togLike', 'togDislike'].every(a => doc.querySelectorAll(`.ob-inner [data-act="${a}"]`).length > 20));
+click(act('ob', 'next')); await wait(35);
+ok('onboarding asks whether first-pass meals work',
+  /Do these work for you/.test(txt()) && doc.querySelectorAll('.ob-inner [data-act="obFit"]').length >= A().MEALS().length * 2);
+const firstMealId = A().MEALS()[0].id;
+click(doc.querySelector(`[data-act="obFit"][data-v="${firstMealId}:never"]`)); await wait(50);
+ok('onboarding never-this records a meal fit decision without scoring',
+  A().S.ui.onboardFit[firstMealId] === 'never' && A().S.points.ledger.length === 0);
+click(act('ob', 'next')); await wait(35);
+ok('onboarding asks about optional kitchen tracking after plan fit',
+  /Track your kitchen/.test(txt()) && A().invOn() === false);
+click(act('invToggle')); await wait(80);
+ok('onboarding stock step has no separate I-have-this button',
+  A().invOn() === true && !!doc.querySelector('[data-ob-stock-qty]') && !/I have this/.test(txt()));
+const firstHave = doc.querySelector('[data-act="obStock"][data-v$=":have"]');
+const haveRef = firstHave?.dataset.v.split(':')[0];
+click(firstHave); await wait(120);
+ok('selecting Have registers ownership immediately',
+  haveRef && A().invQty(haveRef) > 0 && A().S.ui.onboardStock[haveRef] === 'have',
+  `ref=${haveRef} qty=${haveRef ? A().invQty(haveRef) : 'missing'}`);
+const qty = doc.querySelector('[data-ob-stock-qty]');
+const qtyRef = qty.dataset.obStockQty;
+qty.value = '2';
+qty.dispatchEvent(new W.Event('change', { bubbles: true }));
+await wait(120);
+ok('typing a positive setup quantity registers ownership without another button',
+  A().invQty(qtyRef) > 0 && A().S.ui.onboardStock[qtyRef] === 'have',
+  `ref=${qtyRef} qty=${A().invQty(qtyRef)}`);
+ok('setup stock writes to the local palate learning log',
+  A().S.learning.stocked.some(x => x.ref === qtyRef && x.qty > 0),
+  JSON.stringify(A().S.learning.stocked.slice(-3)));
 click(act('ob', 'next')); await wait(50);
+ok('onboarding review hands off to wake gate without starting the day',
+  /You are set/.test(txt()) && A().D() === null);
 click(act('ob', 'done')); await wait(170);
 ok('app mounts', !!doc.querySelector('.rail'));
-ok('no pantry data entry was required', doc.querySelectorAll('[data-pantry]').length === 0);
+ok('no pantry ownership button was required', doc.querySelectorAll('[data-pantry]').length === 0 && A().D() === null);
+A().S.inv.enabled = false;
+A().render();
+await wait(60);
 click(act('go', 'prefs')); await wait(60);
 ok('preferences group large option walls with native disclosures',
   doc.querySelectorAll('#screen .choice-group').length >= 4 &&
@@ -383,6 +427,9 @@ ok('logging out of sequence is refused', A().commitMeal({ mealId: A().sched().ro
   const entries = A().S.points.ledger.slice(start);
   ok('zero-tap meal log uses loggedAt as ateAt', d().logs[row.meal.id].ateAt === d().logs[row.meal.id].loggedAt,
     `${d().logs[row.meal.id].ateAt} / ${d().logs[row.meal.id].loggedAt}`);
+  ok('logged meals write to the local palate learning log',
+    A().S.learning.eaten.some(x => x.mealId === row.meal.id && x.refs.length > 0),
+    JSON.stringify(A().S.learning.eaten.slice(-3)));
   ok('zero-tap meal log does not confirm a different time', entries.every(e => e.code !== 'TIME_CONFIRMED'));
   click(act('ate', A().nextRow().meal.id)); await wait(150);
   ok('repeat eat-time use shows the short explanation', /Set the time you ate\. The rest of today uses that time\./.test(txt()));
