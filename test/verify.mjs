@@ -59,6 +59,7 @@ ok('supabase adapter is dormant and offline', A().Store.adapters.supabase.enable
 
 /* ------------------------------------------------------------ food lookup */
 ok('food lookup ships off by default', A().foodLookupOn() === false);
+ok('online food lookup fallback ships off by default', A().onlineFoodLookupOn() === false);
 ok('food lookup off leaves the existing dish estimator unchanged', A().estimateDish('pizza', 'regular').kcal === 780);
 {
   ok('bundled food DB expanded beyond the seed set', A().FOOD_DB.items.length > 42, `count=${A().FOOD_DB.items.length}`);
@@ -92,6 +93,38 @@ ok('food lookup off leaves the existing dish estimator unchanged', A().estimateD
   ok('food lookup miss does not fabricate calories', miss.kcal === null && miss.needsConfirmation === true);
   ok('food lookup carries ODbL attribution', /Open Food Facts/.test(manual.attribution));
 }
+{
+  const oldFetch = W.fetch;
+  let calls = 0;
+  W.fetch = async () => {
+    calls++;
+    return { ok: true, json: async () => ({ products: [{
+      code: '999000111222',
+      product_name: 'Online lentil bowl',
+      serving_quantity: 250,
+      nutriments: { 'energy-kcal_100g': 120, proteins_100g: 8, carbohydrates_100g: 18, fat_100g: 3 }
+    }] }) };
+  };
+  A().S.prefs.onlineFoodLookup = false;
+  const off = await A().estimateKcalMaybeOnline({ source: 'manual', key: 'zzzonlineonlylentil' });
+  ok('online fallback off makes no network request',
+    calls === 0 && off.kcal === null && off.needsConfirmation === true,
+    `calls=${calls} result=${JSON.stringify(off)}`);
+  A().S.prefs.foodLookup = true;
+  A().S.prefs.onlineFoodLookup = true;
+  const on = await A().estimateKcalMaybeOnline({ source: 'manual', key: 'zzzonlineonlylentil' });
+  ok('online fallback returns attributed estimates only after opt-in',
+    calls === 1 && on.source === 'openfoodfacts' && on.isEstimate === true && /Open Food Facts/.test(on.attribution) && /Estimate/.test(on.note),
+    `calls=${calls} result=${JSON.stringify(on)}`);
+  W.fetch = async () => { calls++; throw new Error('offline'); };
+  const failed = await A().estimateKcalMaybeOnline({ source: 'manual', key: 'zzzonlineoffline' });
+  ok('failed online fallback keeps the bundled miss graceful',
+    failed.kcal === null && /failed/i.test(failed.onlineError || '') && failed.needsConfirmation === true,
+    JSON.stringify(failed));
+  W.fetch = oldFetch;
+  A().S.prefs.foodLookup = false;
+  A().S.prefs.onlineFoodLookup = false;
+}
 
 /* ----------------------------------------------------------- photo logging */
 ok('photo logging ships off by default', A().photoLogOn() === false);
@@ -108,6 +141,28 @@ ok('photo logging uses the confirmed Food-101 ONNX model metadata',
   W.AlphaCoachPhotoMock = async () => [{ label: 'apple_pie', score: 0.92 }, { label: 'baby_back_ribs', score: 0.81 }];
   const top = await A().PhotoClassifier.classify('data:image/png;base64,AA', { topk: 2 });
   ok('photo classifier returns top-k labels from the on-device seam', top.length === 2 && top[0].label === 'apple_pie' && top[0].score === 0.92);
+}
+{
+  const oldFetch = W.fetch;
+  let calls = 0;
+  A().S.prefs.foodLookup = true;
+  A().S.prefs.onlineFoodLookup = true;
+  W.fetch = async () => {
+    calls++;
+    return { ok: true, json: async () => ({ products: [{
+      code: '777888999000',
+      product_name: 'Mystery bar',
+      serving_quantity: 60,
+      nutriments: { 'energy-kcal_100g': 450, proteins_100g: 8, carbohydrates_100g: 62, fat_100g: 18 }
+    }] }) };
+  };
+  const photoOnline = await A().photoEstimateFromLabelOnline('mystery_bar', 0.92, 1);
+  ok('photo fallback uses Open Food Facts only as a labelled estimate',
+    calls === 1 && photoOnline.source === 'photo' && photoOnline.onlineSource === 'openfoodfacts' && photoOnline.isEstimate === true && /Estimate only/.test(photoOnline.note),
+    `calls=${calls} result=${JSON.stringify(photoOnline)}`);
+  W.fetch = oldFetch;
+  A().S.prefs.foodLookup = false;
+  A().S.prefs.onlineFoodLookup = false;
 }
 
 /* ---------------------------------------------------------------- onboarding */
@@ -623,6 +678,7 @@ ok('chat cannot mint points', (() => { const b = A().Points.lifetime(); A().pars
 A().ACT.wipe(); await wait(320);
 A().S.onboarded = true; A().S.inv.enabled = true;
 A().ACT.wake(); await wait(220);
+if (d()) { d().logs = {}; d().prep = {}; }
 {
   const it = A().ensureItem('whey'); it.scoop = 10;
   A().setQty('whey', 250, 't');
@@ -648,6 +704,7 @@ A().ACT.wake(); await wait(220);
   A().setOffset((A().nextRow().at - Date.now()) + MIN); await wait(60);
   const half = A().mealItems(meal).map(i => ({ ref: i.ref, amt: i.amt / 2 }));
   const r = A().commitMeal({ mealId: meal.id, ateAt: Date.now() + A().offset, use: half });
+  ok('inventory macro fixture logs the intended meal', r.ok === true, JSON.stringify(r));
   ok('confirmed consumption deducts', A().invQty(meal.ing[0].ref) < before);
   ok('macros scale with the actual portion', Math.abs(d().logs[meal.id].macros.kcal - meal.kcal / 2) <= 2);
 }
