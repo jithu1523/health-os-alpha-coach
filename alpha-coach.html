@@ -2359,6 +2359,30 @@ function eatenMacros(){
     return {kcal:a.kcal+(m.kcal||0),p:a.p+(m.p||0),c:a.c+(m.c||0),f:a.f+(m.f||0)};
   },{kcal:0,p:0,c:0,f:0});
 }
+const PLAUSIBLE_MEAL_CLUSTER_COUNT=3, PLAUSIBLE_MEAL_CLUSTER_WINDOW=10*MIN;
+function loggedMealTimeRows(d=D()){
+  if(!d) return [];
+  return activeRows().map(r=>{
+    const log=d.logs&&d.logs[r.meal.id];
+    const ateAt=Number(log&&(log.ateAt||log.at));
+    return log&&(log.status==='done'||log.status==='replaced')&&Number.isFinite(ateAt)?{...r,log,ateAt}:null;
+  }).filter(Boolean).sort((a,b)=>a.ateAt-b.ateAt);
+}
+function mealTimePlausibility(d=D()){
+  const rows=loggedMealTimeRows(d);
+  if(rows.length<PLAUSIBLE_MEAL_CLUSTER_COUNT) return null;
+  for(let i=0;i<rows.length;i++){
+    let j=i;
+    while(j<rows.length&&rows[j].ateAt-rows[i].ateAt<=PLAUSIBLE_MEAL_CLUSTER_WINDOW) j++;
+    if(j-i>=PLAUSIBLE_MEAL_CLUSTER_COUNT){
+      const cluster=rows.slice(i,j);
+      return {kind:'clustered-meal-times',count:cluster.length,rows:cluster,
+        at:cluster[0].ateAt,span:cluster[cluster.length-1].ateAt-cluster[0].ateAt,
+        names:cluster.map(r=>r.meal.slot||r.meal.name)};
+    }
+  }
+  return null;
+}
 function commitMeal({mealId, ateAt, loggedAt, use, timeConfirmed}){
   const d=D(); if(!d) return {ok:false,msg:'Your day has not started yet.'};
   const row=activeRows().find(r=>r.meal.id===mealId);
@@ -3507,6 +3531,12 @@ function ScreenToday(){
   const partial=nx&&d.partial?d.partial[nx.meal.id]:null;
 
   const finished=st==='daydone';
+  const clusteredMeals=mealTimePlausibility(d);
+  const PlausibilityBanner=()=>clusteredMeals?`<div class="banner warn">${ic('alert',18,1.7,'var(--warn)')}
+      <div style="flex:1"><p><b>These eating times are very close together.</b> You logged ${esc(clusteredMeals.names.join(', '))} around ${fmtTime(clusteredMeals.at)}. If that is right, leave it. If not, edit the actual times so the rest of today stays useful.</p>
+      <div class="row" style="gap:7px;margin-top:9px;flex-wrap:wrap">
+        ${clusteredMeals.rows.map(r=>`<button class="btn xs ghost" data-act="modal" data-v="edittime" data-arg="${r.meal.id}">Edit ${esc((r.meal.slot||r.meal.name).toLowerCase())}</button>`).join('')}
+      </div></div></div>`:'';
 
   return `<div class="screen">
   <header class="home-head">
@@ -3550,6 +3580,7 @@ function ScreenToday(){
         <button class="btn xs" data-act="more" data-v="${overdue[0].meal.id}">More time</button>
         <button class="btn xs ghost" data-act="modal" data-v="skip" data-arg="${overdue[0].meal.id}">Skip</button>
       </div></div></div>`:''}
+    ${PlausibilityBanner()}
     <section class="card">
       <div class="spread" style="margin-bottom:14px"><span class="label">Overall day</span>
         <span class="meta">${activeRows().filter(r=>r.status==='done').length} of ${MEALS().length} meals</span></div>
@@ -6131,7 +6162,7 @@ setTimeout(()=>{ try{ evaluateReminders(); }catch(e){ console.error(e); } },400)
 window.AlphaCoach={get S(){return S;},PLAN,CATALOG,MEAL_LIBRARY,JUGAAD,SURPRISE,AlphaAPI,ACT,render,
   Store,Points,RULES,REWARD_TARGET,commitMeal,editAteTime,classifyLog,isOpen,isLocked,homeState,
   isHonestyEntry,honestyEntries,honestyPoints,honestyTitle,
-  eatenMacros,macrosFor,clampAte,autoResolveStale,checkStreakBreak,sessionKey,Notify,estimateMacros,
+  eatenMacros,macrosFor,mealTimePlausibility,loggedMealTimeRows,clampAte,autoResolveStale,checkStreakBreak,sessionKey,Notify,estimateMacros,
   DayRing,WeekBars,dayAxes,applyTheme,invOn,dayEndFor,sleepBound,estimateDish,DISHES,WeightTrend,
   FOOD_DB,FoodDb,estimateKcal,estimateKcalMaybeOnline,foodLookupOn,onlineFoodLookupOn,
   PHOTO_MODEL,PhotoClassifier,photoLogOn,photoEstimateFromLabel,photoEstimateFromLabelOnline,shapePhotoOutputs,

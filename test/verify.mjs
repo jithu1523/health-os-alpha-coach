@@ -565,6 +565,59 @@ ok('next meal derives from the eating time', (() => {
   ok('net stays positive', r.pts > 0, String(r.pts));
 }
 
+/* ---------------------------------------- meal-time plausibility is advisory */
+{
+  const startPlausibilityMorning = async () => {
+    A().ACT.wipe(); await wait(320);
+    A().S.onboarded = true; A().ACT.wake(); await wait(220);
+    const morning = new Date(); morning.setHours(7, 0, 0, 0);
+    const day = A().D();
+    day.logs = {}; day.prep = {}; day.reopened = {};
+    day.wake = morning.getTime();
+    day.key = new Date(morning).toISOString().slice(0, 10);
+    A().setOffset(morning.getTime() - Date.now()); await wait(80);
+    return morning;
+  };
+  const logNextAt = ts => {
+    const row = A().nextRow();
+    const before = A().S.points.ledger.length;
+    const r = A().commitMeal({ mealId: row.meal.id, ateAt: ts, loggedAt: ts, timeConfirmed: true });
+    ok(`logged ${row.meal.slot} for plausibility setup`, r.ok === true, r.msg);
+    return { row, entries: A().S.points.ledger.slice(before) };
+  };
+
+  await startPlausibilityMorning();
+  const same = A().D().wake + 120 * MIN;
+  A().setOffset(same - Date.now()); await wait(80);
+  const clustered = [logNextAt(same), logNextAt(same), logNextAt(same)];
+  A().render(); await wait(120);
+  const flag = A().mealTimePlausibility();
+  ok('meal-time plausibility flags three identical actual times',
+    flag && flag.kind === 'clustered-meal-times' && flag.count >= 3,
+    JSON.stringify(flag && { kind: flag.kind, count: flag.count, span: flag.span }));
+  ok('plausibility signal does not change stated ateAt values',
+    clustered.every(x => A().D().logs[x.row.meal.id].ateAt === same));
+  ok('plausibility banner is soft and offers correction',
+    /These eating times are very close together/.test(txt()) &&
+    doc.querySelectorAll('.banner.warn [data-v="edittime"]').length >= 3);
+  const clusteredCodes = clustered.flatMap(x => x.entries.map(e => e.code));
+  ok('plausibility nudge adds no scoring code',
+    clusteredCodes.every(c => !/PLAUS/i.test(c)), clusteredCodes.join(','));
+  const plausibilitySource = html.match(/function mealTimePlausibility[\s\S]*?function commitMeal/)[0];
+  ok('plausibility helper has no Points.award path', !/Points\.award/.test(plausibilitySource));
+
+  await startPlausibilityMorning();
+  for (let i = 0; i < 3; i++) {
+    const row = A().nextRow();
+    A().setOffset(row.at - Date.now()); await wait(80);
+    const r = A().commitMeal({ mealId: row.meal.id, ateAt: row.at, loggedAt: row.at, timeConfirmed: true });
+    ok(`logged normally spaced ${row.meal.slot}`, r.ok === true, r.msg);
+  }
+  A().render(); await wait(120);
+  ok('meal-time plausibility ignores normal spacing', A().mealTimePlausibility() === null);
+  ok('normal spacing shows no plausibility banner', !/These eating times are very close together/.test(txt()));
+}
+
 /* ---------------------------- auto-resolved meals reverse (append-only) on re-log */
 {
   const setupMissed = async () => {
